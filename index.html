@@ -1,0 +1,2329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+  <meta name="theme-color" content="#1B2E5E">
+  <meta name="description" content="HIGIS Group — Central de Gestão Concierge. Preservação de patrimônio, Blindagem HIGIS e Curadoria Técnica para o público Classe A/B do Vale do São Francisco.">
+  <title>HIGIS — Central de Gestão Concierge · v1.3.1</title>
+
+  <!-- PWA: manifest + ícones nativos -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+
+  <!-- iOS: comportamento de app standalone (Safari não lê manifest.json) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HIGIS">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="HIGIS">
+
+  <!-- Fontes: Fraunces (display serifa moderna) + Inter (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+
+  <!-- Tailwind v4 via CDN (jsdelivr — domínio já usado pelos ícones Tabler, evita bloqueios de sandbox) -->
+  <script id="tw-script" src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script>
+    // Fallback: se o jsdelivr falhar, tenta unpkg como segunda fonte
+    document.getElementById('tw-script').addEventListener('error', function () {
+      var fb = document.createElement('script');
+      fb.src = 'https://unpkg.com/@tailwindcss/browser@4';
+      document.head.appendChild(fb);
+    });
+  </script>
+
+  <!-- Tema HIGIS: paleta, sombras (formato @theme do Tailwind v4) -->
+  <style type="text/tailwindcss">
+    @import "tailwindcss";
+
+    @theme {
+      /* Navy */
+      --color-navy: #1B2E5E;
+      --color-navy-50: #E8ECF4;
+      --color-navy-100: #C6D0E3;
+      --color-navy-700: #1B2E5E;
+      --color-navy-800: #14224A;
+      --color-navy-900: #0D1735;
+
+      /* Gold */
+      --color-gold: #B8962E;
+      --color-gold-light: #FDF3DC;
+      --color-gold-dark: #8A6D1F;
+      --color-gold-50: #FDF3DC;
+      --color-gold-100: #F5E0A0;
+      --color-gold-500: #B8962E;
+      --color-gold-700: #8A6D1F;
+
+      /* Sand */
+      --color-sand-50: #FBF9F4;
+      --color-sand-100: #F4EFE3;
+      --color-sand-200: #E8DFCB;
+
+      /* Sombras Concierge */
+      --shadow-concierge: 0 1px 2px rgba(27,46,94,0.04), 0 4px 16px rgba(27,46,94,0.06);
+      --shadow-concierge-lg: 0 4px 24px rgba(27,46,94,0.10), 0 1px 3px rgba(0,0,0,0.04);
+    }
+  </style>
+
+
+  <!-- React + ReactDOM + Babel -->
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    html, body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #FBF9F4;
+      color: #14224A;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overscroll-behavior-y: contain;
+    }
+    .font-display { font-family: 'Fraunces', Georgia, serif; font-optical-sizing: auto; font-variation-settings: "opsz" 32; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+    .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+    /* Scrollbar discreta */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #C6D0E3; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8995AE; }
+
+    /* Hide scrollbar on horizontal scroll containers */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Focus ring premium */
+    *:focus-visible { outline: 2px solid #B8962E; outline-offset: 2px; border-radius: 6px; }
+
+    /* Inputs limpos */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    /* Animação suave de fade nas mudanças de tela */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp .25s ease-out; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* Sidebar item hover */
+    .nav-item { transition: all .15s ease; }
+    .nav-item:hover { background: rgba(184,150,46,0.08); }
+
+    /* Range slider gold */
+    input[type="range"] { accent-color: #B8962E; }
+
+    /* Print friendly */
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white; }
+    }
+
+    /* Custom select chevron */
+    select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 30px; appearance: none; }
+
+    /* Loading splash */
+    #splash { position: fixed; inset: 0; background: #1B2E5E; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity .4s ease; }
+    #splash.gone { opacity: 0; pointer-events: none; }
+    #splash .logo { width: 64px; height: 64px; background: #B8962E; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 38px; font-weight: 700; color: white; }
+    #splash .brand { font-family: 'Fraunces', serif; font-size: 22px; color: #B8962E; margin-top: 18px; letter-spacing: 0.5px; }
+    #splash .sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; letter-spacing: 2px; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <!-- Splash screen (some até React montar) -->
+  <div id="splash">
+    <div class="logo">H</div>
+    <div class="brand">HIGIS</div>
+    <div class="sub">Central de Gestão Concierge</div>
+  </div>
+
+  <div id="root"></div>
+
+  <!-- ============================================================ -->
+  <!--  APP CODE (React via Babel)                                   -->
+  <!-- ============================================================ -->
+  <script type="text/babel" data-presets="react" data-type="module">
+  /* ============================================================ */
+  /*  DATA, CONSTANTS, UTILITIES                                   */
+  /* ============================================================ */
+  const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+  // ── PALETA (sincronizada com Tailwind config) ──
+  const C = {
+    navy: '#1B2E5E', navyL: '#E8ECF4',
+    gold: '#B8962E', goldL: '#FDF3DC', goldD: '#8A6D1F',
+    green: '#3B6D11', greenL: '#EAF3DE',
+    amber: '#854F0B', amberL: '#FAEEDA',
+    red: '#A32D2D', redL: '#FCEBEB',
+    blue: '#185FA5', blueL: '#E6F1FB',
+    purple: '#534AB7', purpleL: '#EEEDFE',
+    teal: '#0F6E56', tealL: '#E1F5EE',
+    gray: '#F7F7F7', sand: '#FBF9F4',
+  };
+
+  // ── PALETAS DE TEMA (configuráveis pelo usuário) ──
+  const THEMES = {
+    'higis-classic': {
+      name: 'HIGIS Clássico',
+      sub: 'Navy & Gold — identidade oficial',
+      primary: '#1B2E5E',     // sidebar bg
+      primaryDark: '#14224A', // hover, deep
+      accent: '#B8962E',      // gold — destaque, KPIs, botões
+      accentLight: '#FDF3DC', // gold-light
+      accentDark: '#8A6D1F',
+      textOnPrimary: '#FDF3DC',
+    },
+    'sertao-premium': {
+      name: 'Sertão Premium',
+      sub: 'Couro & Cobre — calor do Vale',
+      primary: '#3D2817',
+      primaryDark: '#2A1B0E',
+      accent: '#C19A4B',
+      accentLight: '#F4E6CB',
+      accentDark: '#946F2D',
+      textOnPrimary: '#F4E6CB',
+    },
+    'concierge-noir': {
+      name: 'Concierge Noir',
+      sub: 'Onyx & Champanhe — sofisticação noturna',
+      primary: '#0F1419',
+      primaryDark: '#000000',
+      accent: '#D4AF37',
+      accentLight: '#FAF0CD',
+      accentDark: '#A28628',
+      textOnPrimary: '#FAF0CD',
+    },
+    'casa-sertao': {
+      name: 'Casa Sertão',
+      sub: 'Verde Sálvia & Terracota — editorial Casa Sertão',
+      primary: '#2D4A3E',
+      primaryDark: '#1F352B',
+      accent: '#C77D3F',
+      accentLight: '#F5E2C8',
+      accentDark: '#9B5E2C',
+      textOnPrimary: '#F5E2C8',
+    },
+    'marfim-cobalto': {
+      name: 'Marfim & Cobalto',
+      sub: 'Clean editorial — alto contraste',
+      primary: '#1A3A6E',
+      primaryDark: '#0E2750',
+      accent: '#C9A961',
+      accentLight: '#F8EFD4',
+      accentDark: '#9C8244',
+      textOnPrimary: '#F8EFD4',
+    },
+  };
+
+  const ThemeContext = React.createContext(null);
+  const useTheme = () => React.useContext(ThemeContext);
+
+  // ── LogoMark: mostra logo customizada se houver, fallback "H" ──
+  const LogoMark = ({ size = 44, rounded = 12 }) => {
+    const ctx = useTheme();
+    const logo = ctx?.logo;
+    const theme = ctx?.theme || THEMES['higis-classic'];
+    if (logo) {
+      return (
+        <div className="shrink-0 overflow-hidden bg-white flex items-center justify-center" style={{ width: size, height: size, borderRadius: rounded }}>
+          <img src={logo} alt="Logo" className="w-full h-full object-contain" />
+        </div>
+      );
+    }
+    return (
+      <div className="shrink-0 flex items-center justify-center font-display font-bold text-white" style={{ width: size, height: size, borderRadius: rounded, background: theme.accent, fontSize: size * 0.55 }}>
+        H
+      </div>
+    );
+  };
+
+  // ── FORMATTERS ──
+  const fmt = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtInt = v => 'R$ ' + Math.round(v||0).toLocaleString('pt-BR');
+  const fmtNum = v => Number(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pct = v => Math.round(v) + '%';
+  const margemCor = m => m >= 70 ? C.green : m >= 50 ? C.amber : C.red;
+  const margemBg = m => m >= 70 ? C.greenL : m >= 50 ? C.amberL : C.redL;
+
+  // ── METAS HIGIS ──
+  const METAS = { ticketCombo: 1200, combosMin: 3, parcela: 2680, reserva: 16000 };
+
+  // ── DADOS PLANILHA — VENDA DIRETA ──
+  const VENDA_DIRETA = [
+    { cat: 'Sofás', nome: 'Sofá 2 lug. fixo', tempo: '1h', custo: 21.26, precoPraticado: 230 },
+    { cat: 'Sofás', nome: 'Sofá 3 lug. fixo', tempo: '1h20', custo: 24.80, precoPraticado: 280 },
+    { cat: 'Sofás', nome: 'Sofá 2 lug. retrátil (2m)', tempo: '2h', custo: 31.89, precoPraticado: 330 },
+    { cat: 'Sofás', nome: 'Sofá 3 lug. retrátil (3m)', tempo: '3h', custo: 42.52, precoPraticado: 450 },
+    { cat: 'Sofás', nome: 'Sofá em L (5 lug.)', tempo: '3h30', custo: 48.00, precoPraticado: 550 },
+    { cat: 'Colchões', nome: 'Colchão Solteiro', tempo: '45min', custo: 18.20, precoPraticado: 160 },
+    { cat: 'Colchões', nome: 'Colchão Casal', tempo: '1h10', custo: 22.50, precoPraticado: 240 },
+    { cat: 'Colchões', nome: 'Colchão Queen', tempo: '1h30', custo: 26.40, precoPraticado: 280 },
+    { cat: 'Colchões', nome: 'Colchão King', tempo: '1h50', custo: 30.10, precoPraticado: 350 },
+    { cat: 'Poltronas', nome: 'Poltrona Simples', tempo: '40min', custo: 17.50, precoPraticado: 120 },
+    { cat: 'Poltronas', nome: 'Poltrona Papai', tempo: '1h', custo: 21.26, precoPraticado: 180 },
+    { cat: 'Poltronas', nome: 'Puff Pequeno', tempo: '20min', custo: 12.40, precoPraticado: 50 },
+    { cat: 'Poltronas', nome: 'Puff Grande', tempo: '40min', custo: 17.20, precoPraticado: 90 },
+    { cat: 'Cadeiras', nome: 'Cadeira (só assento)', tempo: '15min', custo: 11.50, precoPraticado: 40 },
+    { cat: 'Cadeiras', nome: 'Cadeira (assento+encosto)', tempo: '25min', custo: 13.80, precoPraticado: 65 },
+    { cat: 'Cadeiras', nome: 'Tapete (por m²)', tempo: '30min/m²', custo: 14.50, precoPraticado: 50 },
+    { cat: 'Almofadas', nome: 'Almofada Pequena', tempo: '—', custo: 12.40, precoPraticado: 40 },
+    { cat: 'Almofadas', nome: 'Almofada Média', tempo: '—', custo: 15.80, precoPraticado: 50 },
+    { cat: 'Almofadas', nome: 'Almofada Grande', tempo: '—', custo: 19.20, precoPraticado: 60 },
+  ];
+
+  // ── TABELA PARCEIROS (comissão 15%) ──
+  const PARCEIROS_TAB = [
+    { cat: 'Sofás', nome: 'Sofá — Blindagem', unid: 'por metro', custo: 61.75, preco: 330, comissao: 49.50 },
+    { cat: 'Sofás', nome: 'Sofá — Impermeabilização', unid: 'por metro', custo: 40.60, preco: 270, comissao: 40.50 },
+    { cat: 'Sofás', nome: 'Recamier', unid: 'por unidade', custo: 43.20, preco: 250, comissao: 37.50 },
+    { cat: 'Tapetes', nome: 'Tapete — Blindagem', unid: 'por m²', custo: 30.80, preco: 110, comissao: 16.50 },
+    { cat: 'Tapetes', nome: 'Tapete — Impermeabilização', unid: 'por m²', custo: 20.30, preco: 85, comissao: 12.75 },
+    { cat: 'Poltronas', nome: 'Poltrona Simples', unid: '—', custo: 32.15, preco: 180, comissao: 27.00 },
+    { cat: 'Poltronas', nome: 'Poltrona Papai', unid: '—', custo: 37.05, preco: 200, comissao: 30.00 },
+    { cat: 'Poltronas', nome: 'Puff Pequeno', unid: '—', custo: 20.40, preco: 85, comissao: 12.75 },
+    { cat: 'Poltronas', nome: 'Puff Grande', unid: '—', custo: 28.60, preco: 140, comissao: 21.00 },
+    { cat: 'Cadeiras', nome: 'Cadeira (só assento)', unid: '—', custo: 18.50, preco: 60, comissao: 9.00 },
+    { cat: 'Cadeiras', nome: 'Cadeira (assento+encosto)', unid: '—', custo: 22.40, preco: 85, comissao: 12.75 },
+    { cat: 'Almofadas', nome: 'Almofada Pequena', unid: '—', custo: 12.40, preco: 40, comissao: 6.00 },
+    { cat: 'Almofadas', nome: 'Almofada Média', unid: '—', custo: 15.80, preco: 50, comissao: 7.50 },
+    { cat: 'Almofadas', nome: 'Almofada Grande', unid: '—', custo: 19.20, preco: 60, comissao: 9.00 },
+  ];
+
+  // ── PLANOS BLINDAGEM ──
+  const PLANOS_BLIND = [
+    { id: 'imp', nome: 'Impermeabilização', badge: 'Entrada', visitas: 1, custo: 129.11, preco: 600, cor: C.teal, bg: C.tealL },
+    { id: 'p180', nome: 'Blindagem HIGIS 180', badge: 'Premium · 2/ano', visitas: 2, custo: 147.61*2, preco: 997, cor: C.navy, bg: C.navyL },
+    { id: 'p360', nome: 'Blindagem HIGIS 360', badge: 'Concierge · 5/ano', visitas: 5, custo: 147.61*5, preco: 2952, cor: C.gold, bg: C.goldL },
+    { id: 'p730', nome: 'Blindagem HIGIS 730', badge: 'Elite · 9/24m', visitas: 9, custo: 147.61*9, preco: 4428, cor: C.purple, bg: C.purpleL },
+  ];
+
+  // ── PLANOS RESIDENCIAIS ──
+  const PLANOS_RES = [
+    { id: 'sala_dia', nome: 'Plano Sala em Dia', tipo: 'Semestral', freq: 'a cada 6 meses', cor: C.navy, bg: C.navyL, composicao: ['1 sofá 3 lug. fixo', '4 almofadas médias'], avulso: 480, preco: 408, mensal: 68, economia: 72, custo: 88.00, lucro: 320.00, margem: 78.4, obs: 'Ideal para salas de uso moderado. Manutenção semestral mantém o sofá sempre apresentável.' },
+    { id: 'conforto', nome: 'Plano Conforto da Casa', tipo: 'Semestral', freq: 'a cada 6 meses', cor: C.blue, bg: C.blueL, composicao: ['1 sofá em L (5 lug.)', '1 colchão casal'], avulso: 690, preco: 586.50, mensal: 97.75, economia: 103.50, custo: 70.50, lucro: 516.00, margem: 88.0, obs: 'Proteção completa para famílias maiores. Cobre os dois itens mais usados da casa.' },
+    { id: 'qtocasal', nome: 'Quarto Protegido Casal', tipo: 'Anual', freq: '1x por ano', cor: C.purple, bg: C.purpleL, composicao: ['1 colchão casal'], avulso: 240, preco: 204, mensal: 17, economia: 36, custo: 22.50, lucro: 181.50, margem: 89.0, obs: 'Elimina ácaros e prolonga a vida útil do investimento no colchão.' },
+    { id: 'qtoqueen', nome: 'Quarto Protegido Queen', tipo: 'Anual', freq: '1x por ano', cor: C.purple, bg: C.purpleL, composicao: ['1 colchão queen'], avulso: 280, preco: 238, mensal: 19.83, economia: 42, custo: 26.40, lucro: 211.60, margem: 88.9, obs: 'Indicado para casais que valorizam qualidade do sono e saúde respiratória.' },
+  ];
+
+  // ── COMBOS PROMOCIONAIS ──
+  const COMBOS = [
+    { id: 'pet', nome: 'Combo Pet & Criança', tipo: 'Avulso Promocional', cor: C.teal, bg: C.tealL, composicao: ['1 sofá 2 lug. fixo', '1 poltrona simples', '4 almofadas pequenas'], avulso: 530, preco: 450.50, economia: 79.50, custo: 88.36, lucro: 362.14, margem: 80.4, obs: 'Remove pelos, alérgenos e manchas orgânicas de lares com pets ou crianças.' },
+    { id: 'sala', nome: 'Combo Sala Completa', tipo: 'Avulso Promocional', cor: C.gold, bg: C.goldL, composicao: ['1 sofá 3 lug. fixo', '1 poltrona simples', '4 almofadas médias'], avulso: 600, preco: 510, economia: 90, custo: 105.50, lucro: 404.50, margem: 79.3, obs: 'Renova toda a sala de uma vez. Perfeito para pré-festividades ou após reforma.' },
+    { id: 'descanso', nome: 'Combo Descanso Total', tipo: 'Avulso Promocional', cor: C.navy, bg: C.navyL, composicao: ['1 colchão casal', '1 poltrona simples', '4 almofadas médias'], avulso: 560, preco: 476, economia: 84, custo: 103.20, lucro: 372.80, margem: 78.3, obs: 'Higieniza todos os itens do ambiente de repouso. Foco em bem-estar e descanso.' },
+    { id: 'premium', nome: 'Combo Premium H+B', tipo: 'Ticket Médio', cor: C.gold, bg: C.goldL, composicao: ['Higienização Essential + Blindagem 2h'], avulso: 1400, preco: 1200, economia: 200, custo: 295.21, lucro: 904.79, margem: 75.4, obs: '★ Ticket-alvo HIGIS. Combo de cobertura mínima — 3 fechamentos/mês cobrem a parcela sem tocar na reserva.' },
+  ];
+
+  // ── B2B CONTRATOS ANUAIS ──
+  const B2B = [
+    { id: 'consultorio', nome: 'Consultório Essencial', publico: 'Consultórios e clínicas pequenas', tipo: 'Anual', freq: '1 visita a cada 3 meses', visitas: 4, cor: C.blue, bg: C.blueL, composicao: ['4 cadeiras (assento+encosto)', '1 poltrona simples', '2m² de tapete'], avulso: 1720, preco: 1462, mensal: 121.83, economia: 258, custo: 406.80, lucro: 1055.20, margem: 72.2, obs: 'Transmite higiene e profissionalismo aos pacientes. Trimestral sem interrupção.' },
+    { id: 'recepcao', nome: 'Recepção Premium', publico: 'Clínicas maiores, escritórios, coworkings', tipo: 'Anual', freq: '1 visita a cada 3 meses', visitas: 4, cor: C.gold, bg: C.goldL, composicao: ['1 sofá 3 lug. fixo', '2 poltronas simples', '3m² de tapete'], avulso: 2620, preco: 2227, mensal: 185.58, economia: 393, custo: 413.20, lucro: 1813.80, margem: 81.4, obs: 'Padrão de apresentação constante para espaços de alto fluxo.' },
+    { id: 'imobiliaria', nome: 'Imobiliária & Decorado', publico: 'Imobiliárias, decorados, showrooms', tipo: 'Anual', freq: '1 visita a cada 2 meses', visitas: 6, cor: C.purple, bg: C.purpleL, composicao: ['1 sofá 2 lug. fixo', '2 cadeiras (assento+encosto)', '2m² de tapete'], avulso: 2700, preco: 2295, mensal: 191.25, economia: 405, custo: 467.16, lucro: 1827.84, margem: 79.6, obs: 'Frequência bimestral para ambientes de venda. Imóveis sempre impecáveis.' },
+    { id: 'hotel', nome: 'Hotel & Pousada', publico: 'Pousadas, hospedagens, Airbnb', tipo: 'Anual', freq: '1 visita a cada 6 meses', visitas: 2, cor: C.teal, bg: C.tealL, composicao: ['2 sofás 2 lug. fixos', '4 poltronas simples', '6 almofadas médias'], avulso: 2560, preco: 2176, mensal: 181.33, economia: 384, custo: 414.64, lucro: 1761.36, margem: 80.9, obs: 'Eleva o padrão de avaliação dos hóspedes com manutenção semestral.' },
+  ];
+
+  // ── PARCEIROS B2B ──
+  const PARCEIROS_B2B = [
+    { cat: 'Imobiliárias', nome: 'Mangabeira Imóveis', cidade: 'Petrolina-PE', prio: 'Alta', gancho: 'Pós-locação, pré-entrega, higienização antes da mudança' },
+    { cat: 'Imobiliárias', nome: 'Rita Almeida Corretora', cidade: 'Petrolina-PE', prio: 'Alta', gancho: 'Cliente que alugou/comprou e quer entrar com tudo limpo' },
+    { cat: 'Imobiliárias', nome: 'CJ Consultoria Imobiliária', cidade: 'Juazeiro-BA', prio: 'Alta', gancho: 'Pré-vistoria, entrega e pós-mudança' },
+    { cat: 'Imobiliárias', nome: 'Imobiliária Globo', cidade: 'Juazeiro-BA', prio: 'Alta', gancho: 'Locação e compra com oferta complementar' },
+    { cat: 'Colchões', nome: 'Ortobom Vale', cidade: 'Petrolina-PE / Juazeiro-BA', prio: 'Alta', gancho: 'Manutenção preventiva + combo colchão e sofá' },
+    { cat: 'Colchões', nome: 'Colchões Ortobom', cidade: 'Juazeiro-BA', prio: 'Média/Alta', gancho: 'Compra do colchão + higienização programada' },
+    { cat: 'Estofados', nome: 'Monteiro Estofados', cidade: 'Petrolina-PE', prio: 'Alta', gancho: 'Pós-venda de sofá, reforma e conservação' },
+    { cat: 'Estofados', nome: 'Queiroz Estofamentos', cidade: 'Petrolina-PE', prio: 'Alta', gancho: 'Reforma + higienização + proteção' },
+    { cat: 'Mudanças', nome: 'Granero Transportes', cidade: 'Petrolina-PE / Juazeiro-BA', prio: 'Alta', gancho: 'Pré e pós-mudança, montagem do novo lar' },
+    { cat: 'Condomínios', nome: 'Gecon Petrolina', cidade: 'Petrolina-PE', prio: 'Alta', gancho: 'Acesso a síndicos, áreas comuns e moradores' },
+    { cat: 'Condomínios', nome: 'BRCondos Petrolina', cidade: 'Petrolina-PE', prio: 'Alta', gancho: 'Contratos B2B recorrentes + campanhas para moradores' },
+    { cat: 'Barbearias', nome: 'Gilberto Barbearia Matrix Prime', cidade: 'Petrolina-PE', prio: 'Permuta', gancho: 'Acesso Classe A/B — território de prospecção cativo' },
+    { cat: 'Barbearias', nome: 'Gilberto Barbearia Cassimiro Express', cidade: 'Petrolina-PE', prio: 'Permuta', gancho: 'Samuel prospecta com cliente em cadeira (15-30min)' },
+    { cat: 'Barbearias', nome: 'Gilberto Barbearia Guararapes Express', cidade: 'Petrolina-PE', prio: 'Permuta', gancho: 'Alto giro de público B — exposição contínua' },
+    { cat: 'Personal Org.', nome: 'My Personal Organizer', cidade: 'Petrolina-PE', prio: 'Média/Alta', gancho: 'Pós-organização, pós-mudança, cliente premium' },
+    { cat: 'Saúde', nome: 'Dra. Simone Guimarães', cidade: 'Petrolina-PE', prio: 'Média/Alta', gancho: 'Ácaros, alergias, ambiente saudável' },
+  ];
+
+  // ── CATÁLOGOS DE FILTRO ──
+  const CATS_VD = ['Todos','Sofás','Colchões','Poltronas','Cadeiras','Almofadas'];
+  const CATS_PT = ['Todos','Sofás','Tapetes','Poltronas','Cadeiras','Almofadas'];
+  const CATS_PAR = ['Todos','Imobiliárias','Colchões','Estofados','Mudanças','Condomínios','Barbearias','Personal Org.','Saúde'];
+
+  // ── PRODUTOS (insumos G&S / CNX) ──
+  const PRODUTOS_INI = [
+    { id:1, serv:'Higienização', nome:'Limpador Alcalino 5L', valor:55.5, litros:5, unidTipo:'L', usadas:50 },
+    { id:2, serv:'Higienização', nome:'Bactericida 5L', valor:90, litros:5, unidTipo:'L', usadas:50 },
+    { id:3, serv:'Higienização', nome:'Shampoo 5L', valor:180, litros:5, unidTipo:'L', usadas:50 },
+    { id:4, serv:'Higienização', nome:'Tira Mancha 5L', valor:357, litros:5, unidTipo:'L', usadas:50 },
+    { id:5, serv:'Higienização', nome:'Sanitizante 1L', valor:49, litros:1, unidTipo:'L', usadas:100 },
+    { id:6, serv:'Higienização', nome:'Neutralizador 5L', valor:160, litros:5, unidTipo:'L', usadas:50 },
+    { id:7, serv:'Higienização', nome:'Finalizador 500ML', valor:357, litros:500, unidTipo:'ml', usadas:15 },
+    { id:8, serv:'Impermeabilização', nome:'Impermeabilizante G&S', valor:810, litros:20, unidTipo:'L', usadas:1 },
+    { id:9, serv:'Blindagem', nome:'Blindagem CNX', valor:1180, litros:20, unidTipo:'L', usadas:1 },
+    { id:10, serv:'Couro', nome:'Limpador Couro 5L', valor:327, litros:5, unidTipo:'L', usadas:1 },
+    { id:11, serv:'Couro', nome:'Hidratante Couro 5L', valor:357, litros:5, unidTipo:'L', usadas:1 },
+    { id:12, serv:'Tapete', nome:'Limpador Alcalino 5L', valor:55.5, litros:5, unidTipo:'L', usadas:1 },
+    { id:13, serv:'Tapete', nome:'Bactericida 5L', valor:90, litros:5, unidTipo:'L', usadas:1 },
+    { id:14, serv:'Tapete', nome:'Finalizador 500ML', valor:357, litros:500, unidTipo:'ml', usadas:1 },
+  ];
+
+  const CUSTOS_FIXOS_INI = [
+    { id:1, nome:'Contabilidade', valor:400 },
+    { id:2, nome:'Consultoria Financeira', valor:1000 },
+    { id:3, nome:'Marketing Digital', valor:1500 },
+    { id:4, nome:'CRM Kommo (Samuel)', valor:400 },
+    { id:5, nome:'Celular e Internet', valor:260 },
+    { id:6, nome:'Insumos', valor:50 },
+    { id:7, nome:'Funcionário (Vitor)', valor:1800 },
+    { id:8, nome:'Pró-Labore', valor:2500 },
+    { id:9, nome:'Combustível', valor:800 },
+    { id:10, nome:'Sistemas (Agenda Boa, SOS)', valor:200 },
+    { id:11, nome:'Empréstimo BB', valor:2680 },
+  ];
+
+  const DEPRECIACAO_INI = [
+    { id:1, nome:'Extratora', valor:4000 },
+    { id:2, nome:'Secador Pet', valor:1000 },
+    { id:3, nome:'Pulverizador Inox', valor:2000 },
+    { id:4, nome:'Aspirador Anti-Ácaro', valor:615 },
+    { id:5, nome:'Malas', valor:2900 },
+    { id:6, nome:'Politriz', valor:500 },
+    { id:7, nome:'Pulverizadores e Borrifadores', valor:655 },
+    { id:8, nome:'Escovas e Bicos', valor:500 },
+    { id:9, nome:'Aspirador Vertical', valor:600 },
+  ];
+
+  const DILUICOES = [
+    {label:'1:1 (Meio a meio)', ratio:1},
+    {label:'1:5', ratio:5},
+    {label:'1:10', ratio:10},
+    {label:'1:20', ratio:20},
+    {label:'1:30', ratio:30},
+    {label:'1:40', ratio:40},
+    {label:'1:50', ratio:50},
+    {label:'1:100', ratio:100},
+    {label:'1:200', ratio:200},
+  ];
+
+  // ── NAVEGAÇÃO PRINCIPAL ──
+  const NAV = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'ti-layout-dashboard', desc: 'Visão diária e metas' },
+    { id: 'tabelas', label: 'Tabelas', icon: 'ti-table', desc: 'Venda direta e parceiros', subs: ['Venda Direta', 'Parceiros'] },
+    { id: 'planos', label: 'Planos', icon: 'ti-shield-check', desc: 'Blindagem, Residencial, B2B', subs: ['Blindagem', 'Residencial', 'Combos', 'B2B'] },
+    { id: 'simulador', label: 'Simulador', icon: 'ti-calculator', desc: 'Custo/hora e margens' },
+    { id: 'precificacao', label: 'Precificação', icon: 'ti-receipt-2', desc: 'Custos, depreciação, diluição', subs: ['Custos Fixos', 'Depreciação', 'Produtos', 'Diluição'] },
+    { id: 'financeiro', label: 'Financeiro', icon: 'ti-chart-line', desc: 'Caixa, parcela, reserva' },
+    { id: 'parceiros', label: 'Parceiros B2B', icon: 'ti-users-group', desc: 'Rede de prospecção qualificada' },
+    { id: 'config', label: 'Configurações', icon: 'ti-settings', desc: 'Tema, dados, exportar' },
+  ];
+
+  /* ============================================================ */
+  /*  STORAGE LAYER (LocalStorage hoje, Supabase amanhã)           */
+  /* ============================================================ */
+  // Abstração: troca-se só esta camada quando migrar para Supabase/Firebase.
+  const STORAGE_PREFIX = 'higis:v1:';
+  const storage = {
+    get(key, fallback) {
+      try {
+        const raw = localStorage.getItem(STORAGE_PREFIX + key);
+        return raw == null ? fallback : JSON.parse(raw);
+      } catch { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value)); return true; }
+      catch { return false; }
+    },
+    remove(key) {
+      try { localStorage.removeItem(STORAGE_PREFIX + key); } catch {}
+    },
+    clear() {
+      try {
+        Object.keys(localStorage).filter(k => k.startsWith(STORAGE_PREFIX)).forEach(k => localStorage.removeItem(k));
+      } catch {}
+    },
+    export() {
+      const out = {};
+      try {
+        Object.keys(localStorage).filter(k => k.startsWith(STORAGE_PREFIX)).forEach(k => {
+          out[k.replace(STORAGE_PREFIX, '')] = JSON.parse(localStorage.getItem(k));
+        });
+      } catch {}
+      return out;
+    },
+    import(data) {
+      try {
+        Object.entries(data).forEach(([k, v]) => localStorage.setItem(STORAGE_PREFIX + k, JSON.stringify(v)));
+        return true;
+      } catch { return false; }
+    },
+  };
+
+  // Hook: estado persistido em localStorage
+  function usePersistedState(key, initial) {
+    const [state, setState] = useState(() => {
+      const saved = storage.get(key);
+      return saved !== undefined && saved !== null ? saved : (typeof initial === 'function' ? initial() : initial);
+    });
+    useEffect(() => { storage.set(key, state); }, [key, state]);
+    return [state, setState];
+  }
+
+  // Hook: detecta breakpoints
+  function useResponsive() {
+    const get = () => {
+      const w = window.innerWidth;
+      return { isMobile: w < 768, isTablet: w >= 768 && w < 1024, isDesktop: w >= 1024, width: w };
+    };
+    const [bp, setBp] = useState(get);
+    useEffect(() => {
+      const onResize = () => setBp(get());
+      window.addEventListener('resize', onResize);
+      return () => window.removeEventListener('resize', onResize);
+    }, []);
+    return bp;
+  }
+
+  // Hook: detecta se o app já está instalado / pode ser instalado (Android/Desktop)
+  function useInstallPrompt() {
+    const [installable, setInstallable] = useState(!!window.__higisInstallEvent);
+    const [installed, setInstalled] = useState(
+      window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true // iOS
+    );
+    useEffect(() => {
+      const onInstallable = () => setInstallable(true);
+      const onInstalled = () => { setInstalled(true); setInstallable(false); };
+      window.addEventListener('higis:installable', onInstallable);
+      window.addEventListener('appinstalled', onInstalled);
+      return () => {
+        window.removeEventListener('higis:installable', onInstallable);
+        window.removeEventListener('appinstalled', onInstalled);
+      };
+    }, []);
+    const promptInstall = async () => {
+      const evt = window.__higisInstallEvent;
+      if (!evt) return 'unavailable';
+      const result = await evt.prompt();
+      window.__higisInstallEvent = null;
+      setInstallable(false);
+      return result?.outcome || 'dismissed';
+    };
+    return { installable, installed, promptInstall };
+  }
+
+  // Hook: data formatada
+  function useDate() {
+    const [now, setNow] = useState(new Date());
+    useEffect(() => {
+      const t = setInterval(() => setNow(new Date()), 60000);
+      return () => clearInterval(t);
+    }, []);
+    return now;
+  }
+
+  /* ============================================================ */
+  /*  COMPONENTES UI BASE                                          */
+  /* ============================================================ */
+
+  // ── Card ──
+  const Card = ({ children, className = '', accent, padding = 'p-4 md:p-5', onClick }) => (
+    <div
+      onClick={onClick}
+      className={`bg-white rounded-xl shadow-concierge ${padding} ${className} ${onClick ? 'cursor-pointer hover:shadow-concierge-lg transition-shadow' : ''}`}
+      style={accent ? { borderLeft: `3px solid ${accent}` } : undefined}
+    >
+      {children}
+    </div>
+  );
+
+  // ── Metric (KPI) ──
+  const Metric = ({ label, value, sub, accent = C.navy, icon, trend }) => (
+    <div className="bg-white rounded-xl shadow-concierge p-4 flex items-start justify-between">
+      <div className="min-w-0">
+        <div className="text-[10px] tracking-widest text-neutral-400 uppercase font-semibold">{label}</div>
+        <div className="font-display num text-2xl md:text-3xl font-bold mt-1 truncate" style={{ color: accent }}>{value}</div>
+        {sub && <div className="text-xs text-neutral-500 mt-1">{sub}</div>}
+      </div>
+      {icon && <i className={`ti ${icon} text-xl shrink-0`} style={{ color: accent, opacity: 0.4 }} aria-hidden="true" />}
+    </div>
+  );
+
+  // ── Badge ──
+  const Badge = ({ children, bg, color, className = '' }) => (
+    <span className={`inline-block text-[10px] font-bold px-2 py-[3px] rounded-full ${className}`} style={{ background: bg, color }}>
+      {children}
+    </span>
+  );
+
+  // ── Alert ──
+  const Alert = ({ type = 'info', icon, children }) => {
+    const styles = {
+      info:    { border: C.blue,  bg: C.blueL,  color: C.blue },
+      ok:      { border: C.green, bg: C.greenL, color: C.green },
+      warn:    { border: C.amber, bg: C.amberL, color: C.amber },
+      danger:  { border: C.red,   bg: C.redL,   color: C.red },
+      premium: { border: C.gold,  bg: C.goldL,  color: C.goldD },
+    }[type];
+    return (
+      <div className="text-sm px-3 py-2.5 rounded-r-lg my-2 flex items-start gap-2" style={{ borderLeft: `3px solid ${styles.border}`, background: styles.bg, color: styles.color }}>
+        {icon && <i className={`ti ${icon} text-base mt-0.5 shrink-0`} aria-hidden="true" />}
+        <div className="flex-1">{children}</div>
+      </div>
+    );
+  };
+
+  // ── Section header ──
+  const SectionTitle = ({ children, action }) => (
+    <div className="flex items-center justify-between mb-3 mt-4 first:mt-0">
+      <h3 className="text-[11px] font-bold tracking-[0.12em] uppercase text-neutral-500">{children}</h3>
+      {action}
+    </div>
+  );
+
+  // ── Chip selecionável ──
+  const Chip = ({ active, onClick, children }) => (
+    <button
+      onClick={onClick}
+      className={`shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${active ? 'bg-navy text-white border-navy' : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400'}`}
+    >
+      {children}
+    </button>
+  );
+
+  // ── Progress bar ──
+  const Progress = ({ value, max = 100, color = C.gold }) => {
+    const pct = Math.min(100, (value / max) * 100);
+    return (
+      <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+        <div className="h-full transition-all" style={{ width: `${pct}%`, background: color }} />
+      </div>
+    );
+  };
+
+  // ── Editable cell ──
+  const EditableValue = ({ value, onCommit, type = 'number', prefix = '', suffix = '', className = '' }) => {
+    const [editing, setEditing] = useState(false);
+    const [v, setV] = useState(String(value ?? ''));
+    useEffect(() => { setV(String(value ?? '')); }, [value]);
+    const commit = () => {
+      setEditing(false);
+      const parsed = type === 'number' ? (parseFloat(v) || 0) : v;
+      if (parsed !== value) onCommit(parsed);
+    };
+    return editing ? (
+      <input
+        type={type}
+        autoFocus
+        value={v}
+        onChange={e => setV(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') { setV(String(value ?? '')); setEditing(false); } }}
+        step={type === 'number' ? '0.01' : undefined}
+        className="w-full px-2 py-1 rounded border-2 border-gold bg-gold-light text-navy font-semibold text-sm num"
+      />
+    ) : (
+      <button
+        onClick={() => setEditing(true)}
+        className={`text-left px-1.5 py-1 rounded hover:bg-gold-light/50 border-b border-dashed border-gold/40 hover:border-gold transition-colors w-full num ${className}`}
+      >
+        {prefix}{type === 'number' ? fmtNum(value) : value}{suffix}
+      </button>
+    );
+  };
+
+  // ── Modal genérico ──
+  const Modal = ({ open, onClose, title, children, size = 'md' }) => {
+    if (!open) return null;
+    const w = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }[size];
+    return (
+      <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-navy/40 backdrop-blur-sm fade-up" onClick={onClose}>
+        <div className={`bg-white rounded-t-2xl md:rounded-2xl w-full ${w} max-h-[90vh] overflow-y-auto shadow-concierge-lg`} onClick={e => e.stopPropagation()}>
+          <div className="sticky top-0 bg-white border-b border-neutral-100 px-5 py-3 flex items-center justify-between rounded-t-2xl z-10">
+            <h2 className="font-display text-lg font-bold text-navy">{title}</h2>
+            <button onClick={onClose} className="text-neutral-400 hover:text-navy"><i className="ti ti-x text-xl" aria-hidden="true" /></button>
+          </div>
+          <div className="p-5">{children}</div>
+        </div>
+      </div>
+    );
+  };
+
+  /* ============================================================ */
+  /*  SECTION: DASHBOARD (núcleo de governança diária)            */
+  /* ============================================================ */
+  function SectionDashboard() {
+    const [vendas, setVendas] = usePersistedState('vendas', []);
+    const [form, setForm] = useState({ servico: 'premium', valor: '', cliente: '', obs: '' });
+    const date = useDate();
+
+    // Mês atual
+    const mesAtual = date.toISOString().slice(0, 7);
+    const vendasMes = vendas.filter(v => v.data?.startsWith(mesAtual));
+    const combosFechados = vendasMes.filter(v => v.servico === 'premium' || (v.valor >= METAS.ticketCombo)).length;
+    const receitaMes = vendasMes.reduce((a, v) => a + (v.valor || 0), 0);
+    const ticketMedio = vendasMes.length ? receitaMes / vendasMes.length : 0;
+    const cobertura = (combosFechados / METAS.combosMin) * 100;
+    const faltaParaParcela = Math.max(0, METAS.parcela - receitaMes);
+
+    const SERVICOS = [
+      { v: 'premium', label: 'Combo Premium H+B (R$ 1.200)' },
+      { v: 'blindagem', label: 'Blindagem HIGIS' },
+      { v: 'higienizacao', label: 'Higienização Avulsa' },
+      { v: 'plano180', label: 'Plano 180' },
+      { v: 'plano360', label: 'Plano 360' },
+      { v: 'plano730', label: 'Plano 730' },
+      { v: 'b2b', label: 'Contrato B2B' },
+      { v: 'outro', label: 'Outro' },
+    ];
+
+    const registrar = () => {
+      const valor = parseFloat(form.valor);
+      if (!valor || valor <= 0) return;
+      const nova = {
+        id: Date.now(),
+        servico: form.servico,
+        servicoLabel: SERVICOS.find(s => s.v === form.servico)?.label || form.servico,
+        valor,
+        cliente: form.cliente || '—',
+        obs: form.obs || '',
+        data: new Date().toISOString(),
+      };
+      setVendas([nova, ...vendas]);
+      setForm({ servico: 'premium', valor: '', cliente: '', obs: '' });
+    };
+
+    const remover = id => setVendas(vendas.filter(v => v.id !== id));
+
+    return (
+      <div className="space-y-5 fade-up">
+        {/* Alerta de governança financeira */}
+        <Alert type="warn" icon="ti-shield-half-filled">
+          <strong>Meta de blindagem de caixa:</strong> 3 Combos Premium/mês (R$ 1.200 cada) cobrem a parcela do empréstimo BB (R$ 2.680) sem tocar na <strong>reserva técnica de R$ 16.000</strong>.
+        </Alert>
+
+        {/* KPIs */}
+        <div>
+          <SectionTitle>Visão do Mês — {date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</SectionTitle>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <Metric label="Combos Premium" value={`${combosFechados}/${METAS.combosMin}`} sub={combosFechados >= METAS.combosMin ? 'Meta batida ✓' : `Faltam ${METAS.combosMin - combosFechados}`} accent={combosFechados >= METAS.combosMin ? C.green : C.gold} icon="ti-award" />
+            <Metric label="Receita do Mês" value={fmtInt(receitaMes)} sub={`${vendasMes.length} venda(s)`} accent={C.navy} icon="ti-cash" />
+            <Metric label="Ticket Médio" value={fmtInt(ticketMedio)} sub={`Alvo: ${fmtInt(METAS.ticketCombo)}`} accent={ticketMedio >= METAS.ticketCombo ? C.green : C.amber} icon="ti-chart-bar" />
+            <Metric label="Reserva Técnica" value={fmtInt(METAS.reserva)} sub="Inviolável" accent={C.purple} icon="ti-shield-lock" />
+          </div>
+        </div>
+
+        {/* Progresso visual */}
+        <Card>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="font-display text-lg font-bold text-navy">Cobertura da Parcela</div>
+              <div className="text-xs text-neutral-500">Receita do mês vs. R$ {METAS.parcela.toLocaleString('pt-BR')}</div>
+            </div>
+            <div className="text-right">
+              <div className="font-display num text-2xl font-bold" style={{ color: receitaMes >= METAS.parcela ? C.green : C.amber }}>{Math.round((receitaMes/METAS.parcela)*100)}%</div>
+              <div className="text-[10px] text-neutral-400 uppercase tracking-wider">Cobertura</div>
+            </div>
+          </div>
+          <Progress value={receitaMes} max={METAS.parcela} color={receitaMes >= METAS.parcela ? C.green : C.gold} />
+          <div className="flex justify-between text-xs mt-2 num">
+            <span className="text-neutral-500">{fmtInt(receitaMes)} recebido</span>
+            {faltaParaParcela > 0
+              ? <span className="text-amber-700 font-semibold">Faltam {fmtInt(faltaParaParcela)}</span>
+              : <span className="text-green-700 font-semibold">Parcela coberta ✓</span>
+            }
+          </div>
+        </Card>
+
+        {/* Registrar venda */}
+        <Card>
+          <SectionTitle>Registrar Venda</SectionTitle>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[10px] font-bold tracking-wider uppercase text-neutral-500 block mb-1">Serviço</label>
+              <select value={form.servico} onChange={e => setForm({...form, servico: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 text-navy">
+                {SERVICOS.map(s => <option key={s.v} value={s.v}>{s.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-bold tracking-wider uppercase text-neutral-500 block mb-1">Valor (R$)</label>
+              <input type="number" step="0.01" value={form.valor} onChange={e => setForm({...form, valor: e.target.value})} placeholder="0,00" className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 text-navy num" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold tracking-wider uppercase text-neutral-500 block mb-1">Cliente <span className="text-neutral-400 font-normal">(opcional)</span></label>
+              <input type="text" value={form.cliente} onChange={e => setForm({...form, cliente: e.target.value})} placeholder="Nome do cliente" className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 text-navy" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold tracking-wider uppercase text-neutral-500 block mb-1">Observação <span className="text-neutral-400 font-normal">(opcional)</span></label>
+              <input type="text" value={form.obs} onChange={e => setForm({...form, obs: e.target.value})} placeholder="Bairro, indicação..." className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 text-navy" />
+            </div>
+          </div>
+          <button onClick={registrar} disabled={!parseFloat(form.valor)} className="mt-4 w-full md:w-auto bg-navy hover:bg-navy-800 disabled:bg-neutral-300 text-gold-50 font-bold text-sm px-6 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2">
+            <i className="ti ti-plus" aria-hidden="true" /> Registrar Venda
+          </button>
+        </Card>
+
+        {/* Lista de vendas */}
+        <div>
+          <SectionTitle action={vendas.length > 0 && <button onClick={() => { if (confirm('Limpar todas as vendas registradas?')) setVendas([]); }} className="text-xs text-red-600 hover:underline">Limpar histórico</button>}>
+            Vendas Registradas ({vendas.length})
+          </SectionTitle>
+          {vendas.length === 0 ? (
+            <Card className="text-center text-sm text-neutral-400 py-8">
+              <i className="ti ti-database-off text-3xl block mb-2" aria-hidden="true" />
+              Nenhuma venda registrada. Comece pelo primeiro Combo Premium do mês.
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {vendas.slice(0, 20).map(v => (
+                <Card key={v.id} padding="p-3" className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gold-light flex items-center justify-center shrink-0">
+                    <i className="ti ti-receipt-2 text-gold" aria-hidden="true" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-navy truncate">{v.cliente !== '—' ? v.cliente : v.servicoLabel}</div>
+                    <div className="text-xs text-neutral-500 truncate">
+                      {v.cliente !== '—' && <>{v.servicoLabel} · </>}
+                      {new Date(v.data).toLocaleDateString('pt-BR')}
+                      {v.obs && <> · {v.obs}</>}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="font-display num text-base font-bold text-navy">{fmt(v.valor)}</div>
+                    {v.valor >= METAS.ticketCombo && <Badge bg={C.goldL} color={C.goldD}>Combo ✓</Badge>}
+                  </div>
+                  <button onClick={() => remover(v.id)} className="text-neutral-300 hover:text-red-500 ml-1 shrink-0">
+                    <i className="ti ti-trash text-sm" aria-hidden="true" />
+                  </button>
+                </Card>
+              ))}
+              {vendas.length > 20 && <div className="text-center text-xs text-neutral-400 pt-2">Mostrando 20 de {vendas.length}. Exporte na aba Configurações para arquivo.</div>}
+            </div>
+          )}
+        </div>
+
+        {/* Projetos estratégicos 2026 */}
+        <div>
+          <SectionTitle>Projetos Estratégicos 2026</SectionTitle>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Card accent={C.gold} padding="p-4">
+              <i className="ti ti-building-skyscraper text-gold text-xl" aria-hidden="true" />
+              <div className="font-display font-bold text-navy mt-2">Casa Sertão 2026</div>
+              <div className="text-xs text-neutral-500 mt-1">Editorial premium + parcerias com arquitetos e designers</div>
+            </Card>
+            <Card accent={C.purple} padding="p-4">
+              <i className="ti ti-droplet text-purple-700 text-xl" aria-hidden="true" />
+              <div className="font-display font-bold text-navy mt-2">Lavanderia Premium</div>
+              <div className="text-xs text-neutral-500 mt-1">Tapetes e cortinas em bairro nobre — expansão de unidade</div>
+            </Card>
+            <Card accent={C.teal} padding="p-4">
+              <i className="ti ti-car text-teal-700 text-xl" aria-hidden="true" />
+              <div className="font-display font-bold text-navy mt-2">Renault Oroch</div>
+              <div className="text-xs text-neutral-500 mt-1">Unidade móvel premium para atendimento concierge</div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ============================================================ */
+  /*  SECTION: TABELAS                                             */
+  /* ============================================================ */
+  function SectionTabelas() {
+    const [sub, setSub] = useState(0);
+    const [vdData, setVdData] = usePersistedState('vdData', VENDA_DIRETA.map((it, i) => ({ ...it, id: i })));
+    const [ptData, setPtData] = usePersistedState('ptData', PARCEIROS_TAB.map((it, i) => ({ ...it, id: i })));
+    const [catVD, setCatVD] = useState('Todos');
+    const [catPT, setCatPT] = useState('Todos');
+    const [busca, setBusca] = useState('');
+    const [showAdd, setShowAdd] = useState(false);
+    const [showAddPt, setShowAddPt] = useState(false);
+    const [novo, setNovo] = useState({ cat: 'Sofás', nome: '', tempo: '', custo: '', precoPraticado: '' });
+    const [novoPt, setNovoPt] = useState({ cat: 'Sofás', nome: '', unid: '—', custo: '', preco: '', comissao: '', autoComissao: true });
+
+    const vdFilt = useMemo(() => vdData.filter(i =>
+      (catVD === 'Todos' || i.cat === catVD) &&
+      i.nome.toLowerCase().includes(busca.toLowerCase())
+    ), [catVD, busca, vdData]);
+
+    const ptFilt = useMemo(() => ptData.filter(i => catPT === 'Todos' || i.cat === catPT), [catPT, ptData]);
+
+    const updateVd = (id, field, val) => setVdData(rows => rows.map(r => r.id === id ? { ...r, [field]: val } : r));
+    const delVd = id => setVdData(rows => rows.filter(r => r.id !== id));
+    const addVd = () => {
+      if (!novo.nome) return;
+      setVdData(rows => [...rows, { ...novo, id: Date.now(), custo: parseFloat(novo.custo) || 0, precoPraticado: parseFloat(novo.precoPraticado) || 0 }]);
+      setNovo({ cat: 'Sofás', nome: '', tempo: '', custo: '', precoPraticado: '' });
+      setShowAdd(false);
+    };
+    const resetVd = () => { if (confirm('Restaurar tabela original? Suas edições serão perdidas.')) setVdData(VENDA_DIRETA.map((it, i) => ({ ...it, id: i }))); };
+
+    // Parceiros — editáveis
+    const updatePt = (id, field, val) => {
+      setPtData(rows => rows.map(r => {
+        if (r.id !== id) return r;
+        const updated = { ...r, [field]: val };
+        // Se editou o preço, recalcula comissão automaticamente (15%) — exceto se já foi customizada
+        if (field === 'preco' && r.comissaoAuto !== false) {
+          updated.comissao = Number((val * 0.15).toFixed(2));
+        }
+        if (field === 'comissao') {
+          updated.comissaoAuto = false; // marca como customizada
+        }
+        return updated;
+      }));
+    };
+    const delPt = id => { if (confirm('Remover este serviço da tabela de parceiros?')) setPtData(rows => rows.filter(r => r.id !== id)); };
+    const addPt = () => {
+      if (!novoPt.nome) { alert('Informe o nome do serviço.'); return; }
+      const preco = parseFloat(novoPt.preco) || 0;
+      const comissao = novoPt.autoComissao ? Number((preco * 0.15).toFixed(2)) : (parseFloat(novoPt.comissao) || 0);
+      setPtData(rows => [...rows, {
+        id: Date.now(),
+        cat: novoPt.cat,
+        nome: novoPt.nome,
+        unid: novoPt.unid || '—',
+        custo: parseFloat(novoPt.custo) || 0,
+        preco,
+        comissao,
+        comissaoAuto: novoPt.autoComissao,
+      }]);
+      setNovoPt({ cat: 'Sofás', nome: '', unid: '—', custo: '', preco: '', comissao: '', autoComissao: true });
+      setShowAddPt(false);
+    };
+    const resetPt = () => { if (confirm('Restaurar tabela de parceiros original? Suas edições serão perdidas.')) setPtData(PARCEIROS_TAB.map((it, i) => ({ ...it, id: i }))); };
+
+    return (
+      <div className="space-y-4 fade-up">
+        {/* Sub-tabs */}
+        <div className="flex gap-2">
+          <Chip active={sub === 0} onClick={() => setSub(0)}>Venda Direta</Chip>
+          <Chip active={sub === 1} onClick={() => setSub(1)}>Parceiros (15%)</Chip>
+        </div>
+
+        {sub === 0 && (
+          <>
+            {/* Filtros */}
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 flex-1">
+                {CATS_VD.map(c => <Chip key={c} active={catVD === c} onClick={() => setCatVD(c)}>{c}</Chip>)}
+              </div>
+              <input type="text" placeholder="Buscar serviço..." value={busca} onChange={e => setBusca(e.target.value)} className="text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-white text-navy w-full md:w-64" />
+              <div className="flex gap-2">
+                <button onClick={() => setShowAdd(true)} className="bg-navy text-gold-50 text-sm font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5"><i className="ti ti-plus" aria-hidden="true"/>Novo</button>
+                <button onClick={resetVd} className="text-xs text-neutral-500 hover:text-neutral-700">Restaurar</button>
+              </div>
+            </div>
+
+            {/* Tabela */}
+            <Card padding="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-navy text-gold-50">
+                    <tr>
+                      <th className="text-left text-xs font-semibold px-3 py-3 tracking-wider">Serviço</th>
+                      <th className="text-left text-xs font-semibold px-3 py-3 tracking-wider hidden md:table-cell">Tempo</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider">Custo</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider">Preço</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider hidden sm:table-cell">Lucro</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider">Margem</th>
+                      <th className="w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vdFilt.map(r => {
+                      const lucro = r.precoPraticado - r.custo;
+                      const margem = r.precoPraticado > 0 ? (lucro / r.precoPraticado) * 100 : 0;
+                      return (
+                        <tr key={r.id} className="border-t border-neutral-100 hover:bg-sand-50">
+                          <td className="px-3 py-2.5 min-w-[180px]">
+                            <EditableValue value={r.nome} type="text" onCommit={v => updateVd(r.id, 'nome', v)} className="font-semibold text-navy text-sm" />
+                            <div className="text-[10px] text-neutral-400 flex items-center gap-2 mt-0.5">
+                              <select value={r.cat} onChange={e => updateVd(r.id, 'cat', e.target.value)} className="bg-transparent text-[10px] text-neutral-500 border-b border-dashed border-gold/40">
+                                {CATS_VD.filter(c => c !== 'Todos').map(c => <option key={c}>{c}</option>)}
+                              </select>
+                              <span className="md:hidden">· <EditableValue value={r.tempo} type="text" onCommit={v => updateVd(r.id, 'tempo', v)} className="inline text-[10px]" /></span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5 text-xs text-neutral-500 hidden md:table-cell num"><EditableValue value={r.tempo} type="text" onCommit={v => updateVd(r.id, 'tempo', v)} /></td>
+                          <td className="px-3 py-2.5 text-right text-sm num"><EditableValue value={r.custo} onCommit={v => updateVd(r.id, 'custo', v)} prefix="R$ " /></td>
+                          <td className="px-3 py-2.5 text-right text-sm num"><EditableValue value={r.precoPraticado} onCommit={v => updateVd(r.id, 'precoPraticado', v)} prefix="R$ " /></td>
+                          <td className="px-3 py-2.5 text-right text-sm font-semibold hidden sm:table-cell num" style={{ color: C.green }}>{fmt(lucro)}</td>
+                          <td className="px-3 py-2.5 text-right">
+                            <Badge bg={margemBg(margem)} color={margemCor(margem)}>{pct(margem)}</Badge>
+                          </td>
+                          <td className="px-2"><button onClick={() => delVd(r.id)} className="text-neutral-300 hover:text-red-500"><i className="ti ti-trash text-sm" aria-hidden="true" /></button></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Novo Serviço — Venda Direta">
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-neutral-600 block mb-1">Categoria</label>
+                  <select value={novo.cat} onChange={e => setNovo({...novo, cat: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                    {CATS_VD.filter(c => c !== 'Todos').map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-neutral-600 block mb-1">Nome do serviço</label>
+                  <input type="text" value={novo.nome} onChange={e => setNovo({...novo, nome: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50" />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div><label className="text-xs font-semibold text-neutral-600 block mb-1">Tempo</label><input type="text" placeholder="1h30" value={novo.tempo} onChange={e => setNovo({...novo, tempo: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50" /></div>
+                  <div><label className="text-xs font-semibold text-neutral-600 block mb-1">Custo</label><input type="number" step="0.01" value={novo.custo} onChange={e => setNovo({...novo, custo: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" /></div>
+                  <div><label className="text-xs font-semibold text-neutral-600 block mb-1">Preço</label><input type="number" step="0.01" value={novo.precoPraticado} onChange={e => setNovo({...novo, precoPraticado: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" /></div>
+                </div>
+                <button onClick={addVd} className="w-full bg-navy text-gold-50 font-semibold py-2.5 rounded-lg">Adicionar Serviço</button>
+              </div>
+            </Modal>
+          </>
+        )}
+
+        {sub === 1 && (
+          <>
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 flex-1">
+                {CATS_PT.map(c => <Chip key={c} active={catPT === c} onClick={() => setCatPT(c)}>{c}</Chip>)}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowAddPt(true)} className="bg-navy text-gold-50 text-sm font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 shrink-0"><i className="ti ti-plus" aria-hidden="true"/>Novo Serviço</button>
+                <button onClick={resetPt} className="text-xs text-neutral-500 hover:text-neutral-700 shrink-0">Restaurar</button>
+              </div>
+            </div>
+
+            <Alert type="premium" icon="ti-handshake">
+              Comissão padrão de <strong>15%</strong> sobre o serviço executado. Ao editar o <strong>Preço</strong>, a comissão recalcula automaticamente — edite a comissão manualmente apenas para casos especiais (success fee de arquitetos, override). <strong>Success fee:</strong> 30% adicional em projetos de arquitetos e construtoras.
+            </Alert>
+
+            <Card padding="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-navy text-gold-50">
+                    <tr>
+                      <th className="text-left text-xs font-semibold px-3 py-3 tracking-wider">Serviço</th>
+                      <th className="text-left text-xs font-semibold px-3 py-3 tracking-wider hidden md:table-cell">Unidade</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider hidden sm:table-cell">Custo</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider">Preço</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider">Comissão</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider hidden md:table-cell">Líquido</th>
+                      <th className="text-right text-xs font-semibold px-3 py-3 tracking-wider">Margem</th>
+                      <th className="w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ptFilt.map(r => {
+                      const liquido = r.preco - r.comissao;
+                      const lucro = liquido - (r.custo || 0);
+                      const margem = r.preco > 0 ? (lucro / r.preco) * 100 : 0;
+                      return (
+                        <tr key={r.id} className="border-t border-neutral-100 hover:bg-sand-50">
+                          <td className="px-3 py-2.5 min-w-[180px]">
+                            <EditableValue value={r.nome} type="text" onCommit={v => updatePt(r.id, 'nome', v)} className="font-semibold text-navy text-sm" />
+                            <div className="text-[10px] text-neutral-400 flex items-center gap-2 mt-0.5">
+                              <select value={r.cat} onChange={e => updatePt(r.id, 'cat', e.target.value)} className="bg-transparent text-[10px] text-neutral-500 border-b border-dashed border-gold/40">
+                                {CATS_PT.filter(c => c !== 'Todos').map(c => <option key={c}>{c}</option>)}
+                              </select>
+                            </div>
+                          </td>
+                          <td className="px-3 py-2.5 hidden md:table-cell">
+                            <select value={r.unid || '—'} onChange={e => updatePt(r.id, 'unid', e.target.value)} className="text-xs px-2 py-1 rounded border border-neutral-200 bg-white">
+                              <option value="—">—</option>
+                              <option value="por metro">por metro</option>
+                              <option value="por m²">por m²</option>
+                              <option value="por unidade">por unidade</option>
+                              <option value="por hora">por hora</option>
+                            </select>
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-sm num hidden sm:table-cell"><EditableValue value={r.custo || 0} onCommit={v => updatePt(r.id, 'custo', v)} prefix="R$ " /></td>
+                          <td className="px-3 py-2.5 text-right text-sm num font-semibold text-navy"><EditableValue value={r.preco} onCommit={v => updatePt(r.id, 'preco', v)} prefix="R$ " /></td>
+                          <td className="px-3 py-2.5 text-right text-sm num text-amber-700">
+                            <EditableValue value={r.comissao} onCommit={v => updatePt(r.id, 'comissao', v)} prefix="R$ " />
+                            <div className="text-[9px] text-neutral-400">{r.comissaoAuto !== false ? '15% auto' : 'custom'}</div>
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-sm font-bold num hidden md:table-cell" style={{color: C.green}}>{fmt(liquido)}</td>
+                          <td className="px-3 py-2.5 text-right"><Badge bg={margemBg(margem)} color={margemCor(margem)}>{pct(margem)}</Badge></td>
+                          <td className="px-2"><button onClick={() => delPt(r.id)} className="text-neutral-300 hover:text-red-500"><i className="ti ti-trash text-sm" aria-hidden="true" /></button></td>
+                        </tr>
+                      );
+                    })}
+                    {ptFilt.length === 0 && (
+                      <tr><td colSpan={8} className="text-center text-sm text-neutral-400 py-8"><i className="ti ti-mood-empty text-2xl block mb-1" aria-hidden="true" />Nenhum serviço nesta categoria.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Modal open={showAddPt} onClose={() => setShowAddPt(false)} title="Novo Serviço — Tabela Parceiros">
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-600 block mb-1">Categoria</label>
+                    <select value={novoPt.cat} onChange={e => setNovoPt({...novoPt, cat: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                      {CATS_PT.filter(c => c !== 'Todos').map(c => <option key={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-neutral-600 block mb-1">Unidade</label>
+                    <select value={novoPt.unid} onChange={e => setNovoPt({...novoPt, unid: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                      <option value="—">—</option>
+                      <option value="por metro">por metro</option>
+                      <option value="por m²">por m²</option>
+                      <option value="por unidade">por unidade</option>
+                      <option value="por hora">por hora</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-neutral-600 block mb-1">Nome do serviço</label>
+                  <input type="text" placeholder="Ex: Sofá em L — Blindagem" value={novoPt.nome} onChange={e => setNovoPt({...novoPt, nome: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50" />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div><label className="text-xs font-semibold text-neutral-600 block mb-1">Custo</label><input type="number" step="0.01" placeholder="0,00" value={novoPt.custo} onChange={e => setNovoPt({...novoPt, custo: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" /></div>
+                  <div><label className="text-xs font-semibold text-neutral-600 block mb-1">Preço</label><input type="number" step="0.01" placeholder="0,00" value={novoPt.preco} onChange={e => setNovoPt({...novoPt, preco: e.target.value, comissao: novoPt.autoComissao ? ((parseFloat(e.target.value)||0)*0.15).toFixed(2) : novoPt.comissao})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" /></div>
+                  <div><label className="text-xs font-semibold text-neutral-600 block mb-1">Comissão</label><input type="number" step="0.01" disabled={novoPt.autoComissao} value={novoPt.autoComissao ? ((parseFloat(novoPt.preco)||0)*0.15).toFixed(2) : novoPt.comissao} onChange={e => setNovoPt({...novoPt, comissao: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num disabled:opacity-60" /></div>
+                </div>
+                <label className="flex items-center gap-2 text-xs text-neutral-600 cursor-pointer">
+                  <input type="checkbox" checked={novoPt.autoComissao} onChange={e => setNovoPt({...novoPt, autoComissao: e.target.checked})} />
+                  Calcular comissão automaticamente (15% do preço)
+                </label>
+                <button onClick={addPt} className="w-full bg-navy text-gold-50 font-semibold py-2.5 rounded-lg inline-flex items-center justify-center gap-2"><i className="ti ti-handshake" aria-hidden="true" />Adicionar à Tabela Parceiros</button>
+              </div>
+            </Modal>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  /* ============================================================ */
+  /*  SECTION: PLANOS                                              */
+  /* ============================================================ */
+  function SectionPlanos() {
+    const [sub, setSub] = useState(0);
+    const SUBS = ['Blindagem', 'Residencial', 'Combos', 'B2B'];
+    const datasets = [PLANOS_BLIND, PLANOS_RES, COMBOS, B2B];
+
+    const dataset = datasets[sub];
+
+    return (
+      <div className="space-y-4 fade-up">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {SUBS.map((s, i) => <Chip key={s} active={sub === i} onClick={() => setSub(i)}>{s}</Chip>)}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {dataset.map(item => <PlanoCard key={item.id} item={item} tipo={SUBS[sub]} />)}
+        </div>
+      </div>
+    );
+  }
+
+  function PlanoCard({ item, tipo }) {
+    const [open, setOpen] = useState(false);
+    const lucro = (item.preco || 0) - (item.custo || 0);
+    const margem = item.preco > 0 ? (lucro / item.preco) * 100 : 0;
+    return (
+      <Card accent={item.cor} className="flex flex-col">
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-base md:text-lg font-bold text-navy leading-tight">{item.nome}</div>
+            <div className="flex gap-1.5 flex-wrap mt-1.5">
+              {(item.badge || item.tipo) && <Badge bg={item.bg} color={item.cor}>{item.badge || item.tipo}</Badge>}
+              {item.freq && <Badge bg="#F7F7F7" color="#888">{item.freq}</Badge>}
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="font-display num text-xl md:text-2xl font-bold" style={{color: item.cor}}>{fmt(item.preco)}</div>
+            {item.mensal && <div className="text-[10px] text-neutral-400 num">{fmt(item.mensal)}/mês</div>}
+          </div>
+        </div>
+
+        {item.publico && <div className="text-xs text-neutral-500 italic mb-2">{item.publico}</div>}
+
+        {item.composicao && (
+          <div className="bg-sand-50 rounded-lg p-3 mb-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 mb-1.5">Composição</div>
+            {item.composicao.map((c, i) => (
+              <div key={i} className="text-xs text-navy flex items-center gap-1.5 py-0.5">
+                <i className="ti ti-circle-dot text-gold text-[10px]" aria-hidden="true" />{c}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-2 text-center my-2">
+          <div><div className="text-[9px] uppercase tracking-wider text-neutral-400">Custo</div><div className="text-sm font-bold text-navy num">{fmt(item.custo)}</div></div>
+          <div><div className="text-[9px] uppercase tracking-wider text-neutral-400">Lucro</div><div className="text-sm font-bold num" style={{color: C.green}}>{fmt(lucro)}</div></div>
+          <div><div className="text-[9px] uppercase tracking-wider text-neutral-400">Margem</div><div className="text-sm font-bold num" style={{color: margemCor(margem)}}>{pct(margem)}</div></div>
+        </div>
+
+        {item.economia && <div className="text-xs text-amber-700 mb-2">💰 Economia vs avulso: <strong>{fmt(item.economia)}</strong></div>}
+        {item.obs && (
+          <button onClick={() => setOpen(!open)} className="text-[11px] text-neutral-500 text-left hover:text-navy mt-auto pt-2 border-t border-neutral-100">
+            {open ? '▲ ocultar nota técnica' : '▼ ver nota técnica'}
+          </button>
+        )}
+        {open && item.obs && <div className="text-xs text-neutral-600 italic mt-2 leading-relaxed">{item.obs}</div>}
+      </Card>
+    );
+  }
+
+  /* ============================================================ */
+  /*  SECTION: SIMULADOR                                           */
+  /* ============================================================ */
+  function SectionSimulador() {
+    const [tipo, setTipo] = useState('blindagem');
+    const [horas, setHoras] = usePersistedState('sim.horas', 2);
+    const [custoHora, setCustoHora] = usePersistedState('sim.custoHora', 147.61);
+    const [margem, setMargem] = usePersistedState('sim.margem', 65);
+    const [desconto, setDesconto] = useState(0);
+    const [historico, setHistorico] = usePersistedState('sim.historico', []);
+    const [nome, setNome] = useState('');
+
+    const custoTotal = custoHora * horas;
+    const precoBase = custoTotal / (1 - margem/100);
+    const precoFinal = precoBase * (1 - desconto/100);
+    const lucroFinal = precoFinal - custoTotal;
+    const margemFinal = precoFinal > 0 ? (lucroFinal / precoFinal) * 100 : 0;
+
+    const HORAS_ROW = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 8];
+
+    const salvar = () => {
+      const nova = {
+        id: Date.now(),
+        nome: nome || `Simulação ${historico.length + 1}`,
+        tipo, horas, custoHora, margem, desconto,
+        custo: custoTotal, preco: precoFinal, lucro: lucroFinal, margemReal: margemFinal,
+        data: new Date().toISOString(),
+      };
+      setHistorico([nova, ...historico]);
+      setNome('');
+    };
+
+    return (
+      <div className="space-y-4 fade-up">
+        <Alert type="info" icon="ti-calculator">
+          Use o simulador para precificar serviços avulsos sob medida. <strong>Custo/hora padrão R$ 147,61</strong> = pró-labore + insumos médios + depreciação.
+        </Alert>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <SectionTitle>Parâmetros</SectionTitle>
+            <Slider label="Custo / hora" value={custoHora} min={50} max={400} step={5} onChange={setCustoHora} format={v => `R$ ${v}`} />
+            <Slider label="Duração" value={horas} min={0.5} max={8} step={0.5} onChange={setHoras} format={v => `${v}h`} />
+            <Slider label="Margem alvo" value={margem} min={20} max={80} step={5} onChange={setMargem} format={v => `${v}%`} />
+            <Slider label="Desconto comercial" value={desconto} min={0} max={30} step={1} onChange={setDesconto} format={v => `${v}%`} />
+          </Card>
+
+          <Card accent={C.gold}>
+            <SectionTitle>Resultado</SectionTitle>
+            <div className="text-center py-3 border-y border-neutral-100 my-2">
+              <div className="text-[10px] uppercase tracking-widest text-neutral-400">Preço Final</div>
+              <div className="font-display num text-4xl font-bold text-gold-700 mt-1">{fmt(precoFinal)}</div>
+              {desconto > 0 && <div className="text-xs text-neutral-400 mt-1 num">de {fmt(precoBase)} com {desconto}% off</div>}
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div className="bg-neutral-50 rounded-lg p-3 text-center">
+                <div className="text-[10px] uppercase text-neutral-400">Custo Total</div>
+                <div className="text-base font-bold text-navy num mt-1">{fmt(custoTotal)}</div>
+              </div>
+              <div className="rounded-lg p-3 text-center" style={{ background: margemBg(margemFinal) }}>
+                <div className="text-[10px] uppercase text-neutral-400">Margem Final</div>
+                <div className="text-base font-bold num mt-1" style={{ color: margemCor(margemFinal) }}>{pct(margemFinal)}</div>
+              </div>
+              <div className="bg-neutral-50 rounded-lg p-3 text-center col-span-2">
+                <div className="text-[10px] uppercase text-neutral-400">Lucro Líquido</div>
+                <div className="text-lg font-bold num mt-1" style={{color: C.green}}>{fmt(lucroFinal)}</div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <input type="text" placeholder="Nome da simulação (ex: Sofá Dr. José)" value={nome} onChange={e => setNome(e.target.value)} className="flex-1 text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50" />
+              <button onClick={salvar} className="bg-gold-700 hover:bg-gold-dark text-white text-sm font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5"><i className="ti ti-device-floppy" aria-hidden="true" />Salvar</button>
+            </div>
+          </Card>
+        </div>
+
+        {/* Tabela por hora */}
+        <Card padding="p-0">
+          <div className="px-4 pt-4"><SectionTitle>Preço por Duração (margem {margem}%)</SectionTitle></div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="text-left text-xs font-semibold text-neutral-500 px-3 py-2.5">Duração</th>
+                  <th className="text-right text-xs font-semibold text-neutral-500 px-3 py-2.5">Custo</th>
+                  <th className="text-right text-xs font-semibold text-neutral-500 px-3 py-2.5">Preço Ideal</th>
+                  <th className="text-right text-xs font-semibold text-neutral-500 px-3 py-2.5 hidden sm:table-cell">Lucro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {HORAS_ROW.map(h => {
+                  const c = custoHora * h;
+                  const p = c / (1 - margem/100);
+                  return (
+                    <tr key={h} className="border-t border-neutral-100">
+                      <td className="px-3 py-2 text-sm font-semibold text-navy num">{h}h</td>
+                      <td className="px-3 py-2 text-right text-sm num">{fmt(c)}</td>
+                      <td className="px-3 py-2 text-right text-sm font-bold text-navy num">{fmt(p)}</td>
+                      <td className="px-3 py-2 text-right text-sm hidden sm:table-cell num" style={{color: C.green}}>{fmt(p - c)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        {/* Histórico */}
+        {historico.length > 0 && (
+          <div>
+            <SectionTitle action={<button onClick={() => { if (confirm('Limpar histórico de simulações?')) setHistorico([]); }} className="text-xs text-red-600">Limpar</button>}>
+              Histórico de Simulações ({historico.length})
+            </SectionTitle>
+            <div className="space-y-2">
+              {historico.slice(0, 10).map(h => (
+                <Card key={h.id} padding="p-3" className="flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-navy truncate">{h.nome}</div>
+                    <div className="text-xs text-neutral-500">{h.horas}h · custo R$ {h.custoHora}/h · {new Date(h.data).toLocaleDateString('pt-BR')}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-display num text-base font-bold text-navy">{fmt(h.preco)}</div>
+                    <Badge bg={margemBg(h.margemReal)} color={margemCor(h.margemReal)}>{pct(h.margemReal)}</Badge>
+                  </div>
+                  <button onClick={() => setHistorico(historico.filter(x => x.id !== h.id))} className="text-neutral-300 hover:text-red-500"><i className="ti ti-x" aria-hidden="true" /></button>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const Slider = ({ label, value, min, max, step, onChange, format }) => (
+    <div className="my-3">
+      <div className="flex justify-between items-center mb-1.5">
+        <label className="text-xs font-semibold text-neutral-600">{label}</label>
+        <span className="text-sm font-bold text-navy num">{format ? format(value) : value}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(parseFloat(e.target.value))} className="w-full" />
+    </div>
+  );
+
+  // ── Cartão de instalação nativa (Android/Desktop com prompt real, iOS com instruções) ──
+  function InstallCard() {
+    const { installable, installed, promptInstall } = useInstallPrompt();
+    const [status, setStatus] = useState(null);
+
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    const handleInstall = async () => {
+      const outcome = await promptInstall();
+      if (outcome === 'accepted') setStatus('ok');
+      else if (outcome === 'unavailable') setStatus('manual');
+    };
+
+    if (installed) {
+      return (
+        <Alert type="ok" icon="ti-circle-check">
+          <strong>App instalado!</strong> Você está usando o HIGIS como aplicativo nativo — sem barra de navegador, com ícone próprio na tela inicial.
+        </Alert>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {installable && (
+          <button onClick={handleInstall} className="w-full bg-navy hover:bg-navy-800 text-gold-50 font-bold text-sm py-3 rounded-lg inline-flex items-center justify-center gap-2">
+            <i className="ti ti-download" aria-hidden="true" /> Instalar HIGIS como App
+          </button>
+        )}
+        {status === 'ok' && <Alert type="ok" icon="ti-circle-check">Instalação concluída. Procure o ícone HIGIS na tela inicial / área de trabalho.</Alert>}
+
+        <div className="text-sm text-neutral-600 leading-relaxed">
+          {isIOS ? (
+            <div className="mb-2"><strong className="text-navy">📱 No iPhone/iPad:</strong> toque no botão <strong>Compartilhar</strong> (quadrado com seta ↑) na barra do Safari → <em>Adicionar à Tela de Início</em>.</div>
+          ) : (
+            <div className="mb-2"><strong className="text-navy">📱 No Android:</strong> {installable ? 'use o botão acima, ou' : 'abra'} o menu (⋮) do Chrome → <em>Instalar app</em> / <em>Adicionar à tela inicial</em>.</div>
+          )}
+          <div className="mb-2"><strong className="text-navy">💻 No PC (Chrome/Edge):</strong> {installable ? 'use o botão acima, ou clique' : 'clique'} no ícone de instalação ⊕ na barra de endereço.</div>
+          <div className="text-xs text-neutral-400 mt-3">Após instalar, o HIGIS abre como app nativo, em janela própria, com ícone na tela inicial / área de trabalho — e continua funcionando offline depois da primeira visita.</div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ============================================================ */
+  /*  SECTION: PRECIFICAÇÃO                                        */
+  /* ============================================================ */
+  function SectionPrecificacao() {
+    const [sub, setSub] = useState(0);
+    const SUBS = ['Custos Fixos', 'Depreciação', 'Produtos', 'Diluição'];
+    const [custosFixos, setCustosFixos] = usePersistedState('custosFixos', CUSTOS_FIXOS_INI);
+    const [depreciacao, setDepreciacao] = usePersistedState('depreciacao', DEPRECIACAO_INI);
+    const [produtos, setProdutos] = usePersistedState('produtos', PRODUTOS_INI);
+    const [horasDia, setHorasDia] = usePersistedState('horasDia', 6);
+    const [diasMes, setDiasMes] = usePersistedState('diasMes', 22);
+
+    const totalFixos = custosFixos.reduce((a, b) => a + (b.valor || 0), 0);
+    const totalDep = depreciacao.reduce((a, b) => a + (b.valor || 0), 0);
+    const atendMes = horasDia * diasMes;
+    const custoPorAtend = totalFixos / atendMes;
+    const depMensal = totalDep * 0.0083;
+    const depPorAtend = depMensal / atendMes;
+
+    return (
+      <div className="space-y-4 fade-up">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {SUBS.map((s, i) => <Chip key={s} active={sub === i} onClick={() => setSub(i)}>{s}</Chip>)}
+        </div>
+
+        {/* KPIs estruturais */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Metric label="Custos Fixos / mês" value={fmtInt(totalFixos)} accent={C.red} icon="ti-receipt" />
+          <Metric label="Depreciação Total" value={fmtInt(totalDep)} sub={`${fmt(depMensal)}/mês`} accent={C.amber} icon="ti-tools" />
+          <Metric label="Atendimentos / mês" value={atendMes} sub={`${horasDia}h × ${diasMes} dias`} accent={C.navy} icon="ti-calendar-event" />
+          <Metric label="Custo por Atendimento" value={fmt(custoPorAtend + depPorAtend)} sub="Fixos + depreciação" accent={C.gold} icon="ti-cash" />
+        </div>
+
+        {sub === 0 && <PrecListEditor titulo="Custos Fixos Mensais" data={custosFixos} setData={setCustosFixos} total={totalFixos} sufixo="/mês" />}
+        {sub === 1 && <PrecListEditor titulo="Equipamentos (Depreciação)" data={depreciacao} setData={setDepreciacao} total={totalDep} sufixo=" total" />}
+        {sub === 2 && <ProdutosEditor produtos={produtos} setProdutos={setProdutos} />}
+        {sub === 3 && <DiluicaoCalc produtos={produtos} setProdutos={setProdutos} />}
+
+        {sub === 0 && (
+          <Card>
+            <SectionTitle>Capacidade Operacional</SectionTitle>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Horas / dia</label>
+                <input type="number" value={horasDia} onChange={e => setHorasDia(parseInt(e.target.value) || 0)} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Dias / mês</label>
+                <input type="number" value={diasMes} onChange={e => setDiasMes(parseInt(e.target.value) || 0)} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  function PrecListEditor({ titulo, data, setData, total, sufixo }) {
+    const [novo, setNovo] = useState({ nome: '', valor: '' });
+    const upd = (id, field, val) => setData(data.map(r => r.id === id ? { ...r, [field]: val } : r));
+    const del = id => setData(data.filter(r => r.id !== id));
+    const add = () => {
+      if (!novo.nome) return;
+      setData([...data, { id: Date.now(), nome: novo.nome, valor: parseFloat(novo.valor) || 0 }]);
+      setNovo({ nome: '', valor: '' });
+    };
+    return (
+      <Card>
+        <SectionTitle action={<div className="font-display num text-lg font-bold text-navy">{fmt(total)}<span className="text-xs text-neutral-400 font-normal">{sufixo}</span></div>}>
+          {titulo}
+        </SectionTitle>
+        <div className="space-y-1.5">
+          {data.map(r => (
+            <div key={r.id} className="flex items-center gap-2 py-1.5 border-b border-neutral-100">
+              <EditableValue value={r.nome} type="text" onCommit={v => upd(r.id, 'nome', v)} className="flex-1 text-sm" />
+              <div className="w-32"><EditableValue value={r.valor} onCommit={v => upd(r.id, 'valor', v)} prefix="R$ " className="text-right font-semibold" /></div>
+              <button onClick={() => del(r.id)} className="text-neutral-300 hover:text-red-500"><i className="ti ti-trash text-sm" aria-hidden="true" /></button>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-neutral-200">
+          <input type="text" placeholder="Nome" value={novo.nome} onChange={e => setNovo({...novo, nome: e.target.value})} className="flex-1 text-sm px-3 py-2 rounded-lg border border-neutral-200" />
+          <input type="number" step="0.01" placeholder="R$" value={novo.valor} onChange={e => setNovo({...novo, valor: e.target.value})} className="w-28 text-sm px-3 py-2 rounded-lg border border-neutral-200 num text-right" />
+          <button onClick={add} className="bg-navy text-gold-50 px-3 py-2 rounded-lg text-sm"><i className="ti ti-plus" aria-hidden="true" /></button>
+        </div>
+      </Card>
+    );
+  }
+
+  function ProdutosEditor({ produtos, setProdutos }) {
+    const [filtro, setFiltro] = useState('Todos');
+    const [showAdd, setShowAdd] = useState(false);
+    const [novo, setNovo] = useState({ serv: 'Higienização', nome: '', valor: '', litros: '', unidTipo: 'L', usadas: '' });
+    const SERVS = ['Todos', 'Higienização', 'Impermeabilização', 'Blindagem', 'Couro', 'Tapete'];
+    const SERVS_EDIT = ['Higienização', 'Impermeabilização', 'Blindagem', 'Couro', 'Tapete'];
+
+    const upd = (id, field, val) => setProdutos(produtos.map(p => p.id === id ? { ...p, [field]: val } : p));
+    const del = id => { if (confirm('Remover este produto?')) setProdutos(produtos.filter(p => p.id !== id)); };
+    const lista = produtos.filter(p => filtro === 'Todos' || p.serv === filtro);
+
+    const add = () => {
+      if (!novo.nome) { alert('Informe o nome do produto.'); return; }
+      const valor = parseFloat(novo.valor) || 0;
+      const litros = parseFloat(novo.litros) || 0;
+      if (valor <= 0 || litros <= 0) { alert('Valor e volume precisam ser maiores que zero.'); return; }
+      setProdutos([...produtos, {
+        id: Date.now(),
+        serv: novo.serv,
+        nome: novo.nome,
+        valor,
+        litros,
+        unidTipo: novo.unidTipo,
+        usadas: parseInt(novo.usadas) || 1,
+      }]);
+      setNovo({ serv: 'Higienização', nome: '', valor: '', litros: '', unidTipo: 'L', usadas: '' });
+      setShowAdd(false);
+    };
+
+    const reset = () => {
+      if (confirm('Restaurar a tabela original de produtos G&S/CNX? Suas edições serão perdidas.')) {
+        setProdutos(PRODUTOS_INI);
+      }
+    };
+
+    return (
+      <>
+        <div className="flex flex-col md:flex-row md:items-center gap-2">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 flex-1">
+            {SERVS.map(s => <Chip key={s} active={filtro === s} onClick={() => setFiltro(s)}>{s}</Chip>)}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowAdd(true)} className="bg-navy text-gold-50 text-sm font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5 shrink-0">
+              <i className="ti ti-plus" aria-hidden="true" />Novo Produto
+            </button>
+            <button onClick={reset} className="text-xs text-neutral-500 hover:text-neutral-700 shrink-0">Restaurar</button>
+          </div>
+        </div>
+
+        <Card padding="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-navy text-gold-50">
+                <tr>
+                  <th className="text-left text-xs font-semibold px-3 py-2.5 tracking-wider">Produto</th>
+                  <th className="text-left text-xs font-semibold px-3 py-2.5 tracking-wider hidden md:table-cell">Serviço</th>
+                  <th className="text-right text-xs font-semibold px-3 py-2.5 tracking-wider">Valor</th>
+                  <th className="text-right text-xs font-semibold px-3 py-2.5 tracking-wider">Volume</th>
+                  <th className="text-right text-xs font-semibold px-3 py-2.5 tracking-wider hidden sm:table-cell">Usos</th>
+                  <th className="text-right text-xs font-semibold px-3 py-2.5 tracking-wider">R$/ml</th>
+                  <th className="w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {lista.map(p => {
+                  const totalMl = p.unidTipo === 'L' ? p.litros * 1000 : p.litros;
+                  const custoMl = totalMl > 0 ? p.valor / totalMl : 0;
+                  const custoPorUso = p.usadas > 0 ? p.valor / p.usadas : 0;
+                  return (
+                    <tr key={p.id} className="border-t border-neutral-100 hover:bg-sand-50">
+                      <td className="px-3 py-2 min-w-[180px]">
+                        <EditableValue value={p.nome} type="text" onCommit={v => upd(p.id, 'nome', v)} className="font-semibold text-navy text-sm" />
+                        <div className="text-[10px] text-neutral-400 md:hidden mt-1">
+                          <select value={p.serv} onChange={e => upd(p.id, 'serv', e.target.value)} className="bg-transparent border-b border-dashed border-gold/40 text-[10px] text-neutral-500">
+                            {SERVS_EDIT.map(s => <option key={s}>{s}</option>)}
+                          </select>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 hidden md:table-cell">
+                        <select value={p.serv} onChange={e => upd(p.id, 'serv', e.target.value)} className="text-xs px-2 py-1 rounded border border-neutral-200 bg-white">
+                          {SERVS_EDIT.map(s => <option key={s}>{s}</option>)}
+                        </select>
+                      </td>
+                      <td className="px-3 py-2 text-right num min-w-[110px]"><EditableValue value={p.valor} onCommit={v => upd(p.id, 'valor', v)} prefix="R$ " /></td>
+                      <td className="px-3 py-2 text-right">
+                        <div className="flex items-center gap-1 justify-end">
+                          <div className="w-16"><EditableValue value={p.litros} onCommit={v => upd(p.id, 'litros', v)} className="text-right text-xs num" /></div>
+                          <select value={p.unidTipo} onChange={e => upd(p.id, 'unidTipo', e.target.value)} className="text-xs px-1 py-0.5 rounded border border-neutral-200 bg-white">
+                            <option value="L">L</option>
+                            <option value="ml">ml</option>
+                          </select>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-right text-xs hidden sm:table-cell">
+                        <div className="w-12 ml-auto"><EditableValue value={p.usadas} onCommit={v => upd(p.id, 'usadas', v)} className="text-right num" /></div>
+                        <div className="text-[9px] text-neutral-400 num mt-0.5">{custoPorUso > 0 ? fmt(custoPorUso) : '—'}</div>
+                      </td>
+                      <td className="px-3 py-2 text-right text-xs font-semibold text-gold-700 num">R$ {custoMl.toFixed(3)}</td>
+                      <td className="px-2"><button onClick={() => del(p.id)} className="text-neutral-300 hover:text-red-500"><i className="ti ti-trash text-sm" aria-hidden="true" /></button></td>
+                    </tr>
+                  );
+                })}
+                {lista.length === 0 && (
+                  <tr><td colSpan={7} className="text-center text-sm text-neutral-400 py-8"><i className="ti ti-flask-off text-2xl block mb-1" aria-hidden="true" />Nenhum produto nesta categoria.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Alert type="info" icon="ti-info-circle">
+          <strong>Como editar:</strong> clique em qualquer campo (nome, valor, volume, usos) para alterar direto na linha. <strong>R$/ml</strong> recalcula automaticamente. <strong>Usos</strong> = quantos atendimentos uma embalagem rende em média (Custo/Uso aparece abaixo).
+        </Alert>
+
+        <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Novo Produto — Catálogo de Insumos">
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Categoria de serviço</label>
+                <select value={novo.serv} onChange={e => setNovo({...novo, serv: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                  {SERVS_EDIT.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Nome do produto</label>
+                <input type="text" placeholder="Ex: Limpador Alcalino 5L" value={novo.nome} onChange={e => setNovo({...novo, nome: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Valor (R$)</label>
+                <input type="number" step="0.01" placeholder="0,00" value={novo.valor} onChange={e => setNovo({...novo, valor: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Volume</label>
+                <input type="number" step="0.01" placeholder="5" value={novo.litros} onChange={e => setNovo({...novo, litros: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Unidade</label>
+                <select value={novo.unidTipo} onChange={e => setNovo({...novo, unidTipo: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                  <option value="L">Litros</option>
+                  <option value="ml">Mililitros</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Usos / emb.</label>
+                <input type="number" placeholder="50" value={novo.usadas} onChange={e => setNovo({...novo, usadas: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+              </div>
+            </div>
+            <button onClick={add} className="w-full bg-navy text-gold-50 font-semibold py-2.5 rounded-lg inline-flex items-center justify-center gap-2">
+              <i className="ti ti-flask-filled" aria-hidden="true" />Adicionar ao Catálogo
+            </button>
+          </div>
+        </Modal>
+      </>
+    );
+  }
+
+  function DiluicaoCalc({ produtos, setProdutos }) {
+    const [prodId, setProdId] = useState(produtos[0]?.id || 1);
+    const [ratio, setRatio] = useState(10);
+    const [ratioCustom, setRatioCustom] = useState(false);
+    const [volume, setVolume] = useState(1000);
+    const [showAdd, setShowAdd] = useState(false);
+    const [novo, setNovo] = useState({ serv: 'Higienização', nome: '', valor: '', litros: '', unidTipo: 'L', usadas: '' });
+    const SERVS_EDIT = ['Higienização', 'Impermeabilização', 'Blindagem', 'Couro', 'Tapete'];
+
+    const prod = produtos.find(p => p.id === prodId) || produtos[0];
+    const totalMl = prod ? (prod.unidTipo === 'L' ? prod.litros * 1000 : prod.litros) : 1000;
+    const custoMl = prod && totalMl > 0 ? prod.valor / totalMl : 0;
+    const concMl = volume / (ratio + 1);
+    const aguaMl = volume - concMl;
+    const custoTotal = concMl * custoMl;
+    const rendimento = totalMl * (ratio + 1);
+
+    const updProd = (field, val) => {
+      if (!prod) return;
+      setProdutos(produtos.map(p => p.id === prod.id ? { ...p, [field]: val } : p));
+    };
+
+    const delProd = () => {
+      if (!prod) return;
+      if (confirm(`Remover o produto "${prod.nome}" do catálogo?`)) {
+        const novos = produtos.filter(p => p.id !== prod.id);
+        setProdutos(novos);
+        if (novos.length > 0) setProdId(novos[0].id);
+      }
+    };
+
+    const addProd = () => {
+      if (!novo.nome) { alert('Informe o nome do produto.'); return; }
+      const valor = parseFloat(novo.valor) || 0;
+      const litros = parseFloat(novo.litros) || 0;
+      if (valor <= 0 || litros <= 0) { alert('Valor e volume precisam ser maiores que zero.'); return; }
+      const id = Date.now();
+      setProdutos([...produtos, {
+        id, serv: novo.serv, nome: novo.nome, valor, litros,
+        unidTipo: novo.unidTipo, usadas: parseInt(novo.usadas) || 1,
+      }]);
+      setProdId(id); // seleciona o novo
+      setNovo({ serv: 'Higienização', nome: '', valor: '', litros: '', unidTipo: 'L', usadas: '' });
+      setShowAdd(false);
+    };
+
+    return (
+      <>
+        <Card>
+          <SectionTitle action={<button onClick={() => setShowAdd(true)} className="bg-navy text-gold-50 text-xs font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5"><i className="ti ti-plus" aria-hidden="true" />Novo Produto</button>}>
+            Calculadora de Diluição
+          </SectionTitle>
+
+          {/* Seletor de produto */}
+          <div className="mb-3">
+            <label className="text-xs font-semibold text-neutral-600 block mb-1">Produto</label>
+            <div className="flex gap-2">
+              <select value={prodId} onChange={e => setProdId(parseInt(e.target.value))} className="flex-1 text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                {produtos.map(p => <option key={p.id} value={p.id}>{p.nome} ({p.serv})</option>)}
+              </select>
+              {prod && (
+                <button onClick={delProd} title="Remover este produto do catálogo" className="bg-red-50 text-red-700 border border-red-200 px-3 rounded-lg inline-flex items-center">
+                  <i className="ti ti-trash text-sm" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Edição inline do produto selecionado */}
+          {prod && (
+            <div className="bg-sand-50 rounded-lg p-3 mb-3 border border-sand-200">
+              <div className="text-[10px] uppercase tracking-wider text-neutral-500 font-bold mb-2 flex items-center gap-1">
+                <i className="ti ti-pencil text-gold" aria-hidden="true" />
+                Editar dados do produto (clique nos campos)
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-semibold text-neutral-500 block mb-0.5">Nome</label>
+                  <EditableValue value={prod.nome} type="text" onCommit={v => updProd('nome', v)} className="text-sm font-semibold text-navy" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-neutral-500 block mb-0.5">Categoria</label>
+                  <select value={prod.serv} onChange={e => updProd('serv', e.target.value)} className="w-full text-sm px-2 py-1 rounded border border-neutral-200 bg-white">
+                    {SERVS_EDIT.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-neutral-500 block mb-0.5">Valor da embalagem</label>
+                  <EditableValue value={prod.valor} onCommit={v => updProd('valor', v)} prefix="R$ " className="text-sm font-semibold text-navy" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-neutral-500 block mb-0.5">Volume da embalagem</label>
+                  <div className="flex items-center gap-1">
+                    <div className="flex-1"><EditableValue value={prod.litros} onCommit={v => updProd('litros', v)} className="text-sm font-semibold text-navy" /></div>
+                    <select value={prod.unidTipo} onChange={e => updProd('unidTipo', e.target.value)} className="text-xs px-2 py-1 rounded border border-neutral-200 bg-white">
+                      <option value="L">L</option>
+                      <option value="ml">ml</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="text-[10px] text-neutral-400 mt-2 num">
+                Equivale a <strong className="text-gold-700">R$ {custoMl.toFixed(4)}/ml</strong> de concentrado
+              </div>
+            </div>
+          )}
+
+          {/* Parâmetros de diluição */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-neutral-600 block mb-1">Diluição (1 parte de concentrado : X de água)</label>
+              {!ratioCustom ? (
+                <div className="flex gap-2">
+                  <select value={ratio} onChange={e => setRatio(parseInt(e.target.value))} className="flex-1 text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                    {DILUICOES.map(d => <option key={d.ratio} value={d.ratio}>{d.label}</option>)}
+                  </select>
+                  <button onClick={() => setRatioCustom(true)} className="text-xs text-neutral-500 hover:text-navy px-2">Custom</button>
+                </div>
+              ) : (
+                <div className="flex gap-2 items-center">
+                  <span className="text-sm text-neutral-600 num">1 :</span>
+                  <input type="number" value={ratio} onChange={e => setRatio(parseInt(e.target.value) || 1)} min="1" className="flex-1 text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+                  <button onClick={() => setRatioCustom(false)} className="text-xs text-neutral-500 hover:text-navy px-2">Presets</button>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-neutral-600 block mb-1">Volume final desejado (ml)</label>
+              <input type="number" value={volume} onChange={e => setVolume(parseFloat(e.target.value) || 0)} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="bg-gold-light rounded-lg p-3 text-center">
+              <div className="text-[10px] uppercase text-neutral-500">Concentrado</div>
+              <div className="font-display num text-xl font-bold text-gold-700 mt-1">{concMl.toFixed(0)} ml</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3 text-center">
+              <div className="text-[10px] uppercase text-neutral-500">Água</div>
+              <div className="font-display num text-xl font-bold text-blue-700 mt-1">{aguaMl.toFixed(0)} ml</div>
+            </div>
+            <div className="bg-neutral-50 rounded-lg p-3 text-center col-span-2">
+              <div className="text-[10px] uppercase text-neutral-500">Custo desta diluição</div>
+              <div className="font-display num text-2xl font-bold text-navy mt-1">{fmt(custoTotal)}</div>
+              <div className="text-xs text-neutral-500 mt-1 num">Rendimento total da embalagem: {(rendimento/1000).toFixed(1)} L de solução pronta</div>
+            </div>
+          </div>
+        </Card>
+
+        <Modal open={showAdd} onClose={() => setShowAdd(false)} title="Novo Produto — Catálogo de Insumos">
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Categoria de serviço</label>
+                <select value={novo.serv} onChange={e => setNovo({...novo, serv: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                  {SERVS_EDIT.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Nome do produto</label>
+                <input type="text" placeholder="Ex: Limpador Alcalino 5L" value={novo.nome} onChange={e => setNovo({...novo, nome: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Valor (R$)</label>
+                <input type="number" step="0.01" placeholder="0,00" value={novo.valor} onChange={e => setNovo({...novo, valor: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Volume</label>
+                <input type="number" step="0.01" placeholder="5" value={novo.litros} onChange={e => setNovo({...novo, litros: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Unidade</label>
+                <select value={novo.unidTipo} onChange={e => setNovo({...novo, unidTipo: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50">
+                  <option value="L">Litros</option>
+                  <option value="ml">Mililitros</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-neutral-600 block mb-1">Usos / emb.</label>
+                <input type="number" placeholder="50" value={novo.usadas} onChange={e => setNovo({...novo, usadas: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50 num" />
+              </div>
+            </div>
+            <button onClick={addProd} className="w-full bg-navy text-gold-50 font-semibold py-2.5 rounded-lg inline-flex items-center justify-center gap-2">
+              <i className="ti ti-flask-filled" aria-hidden="true" />Adicionar e Selecionar
+            </button>
+            <div className="text-[11px] text-neutral-400 text-center">O novo produto também aparece automaticamente na aba Produtos.</div>
+          </div>
+        </Modal>
+      </>
+    );
+  }
+
+  /* ============================================================ */
+  /*  SECTION: FINANCEIRO                                          */
+  /* ============================================================ */
+  function SectionFinanceiro() {
+    const [combos, setCombos] = useState(3);
+    const [outros, setOutros] = useState(0);
+    const [custosVar, setCustosVar] = useState(1200);
+
+    const faturamento = combos * METAS.ticketCombo + outros;
+    const liquido = faturamento - custosVar;
+    const sobra = liquido - METAS.parcela;
+
+    return (
+      <div className="space-y-4 fade-up">
+        <Alert type="danger" icon="ti-alert-octagon">
+          <strong>Parcela:</strong> R$ 2.680/mês a partir de 30/05/2026 (12×). <strong>Reserva técnica de R$ 16.000 é INVIOLÁVEL</strong> — só toca em caso de emergência absoluta com Higia/aprovação.
+        </Alert>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Metric label="Parcela Mensal" value={fmtInt(METAS.parcela)} accent={C.red} icon="ti-alert-triangle" />
+          <Metric label="Reserva Técnica" value={fmtInt(METAS.reserva)} accent={C.purple} icon="ti-shield-lock" />
+          <Metric label="Ticket Alvo" value={fmtInt(METAS.ticketCombo)} accent={C.gold} icon="ti-target" />
+          <Metric label="Meta Mensal" value={`${METAS.combosMin} Combos`} sub="Mínimo para cobrir" accent={C.green} icon="ti-award" />
+        </div>
+
+        <Card>
+          <SectionTitle>Simulador de Caixa Mensal</SectionTitle>
+          <Slider label="Combos Premium fechados" value={combos} min={0} max={15} step={1} onChange={setCombos} format={v => `${v} × R$ 1.200`} />
+          <Slider label="Outros serviços (R$)" value={outros} min={0} max={20000} step={100} onChange={setOutros} format={v => fmtInt(v)} />
+          <Slider label="Custos variáveis estimados" value={custosVar} min={0} max={10000} step={100} onChange={setCustosVar} format={v => fmtInt(v)} />
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+            <div className="bg-gold-light rounded-lg p-3 text-center">
+              <div className="text-[10px] uppercase text-neutral-500">Faturamento</div>
+              <div className="font-display num text-lg font-bold text-gold-700 mt-1">{fmtInt(faturamento)}</div>
+            </div>
+            <div className="bg-amber-50 rounded-lg p-3 text-center">
+              <div className="text-[10px] uppercase text-neutral-500">- Custos Variáveis</div>
+              <div className="font-display num text-lg font-bold text-amber-700 mt-1">{fmtInt(custosVar)}</div>
+            </div>
+            <div className="bg-blue-50 rounded-lg p-3 text-center">
+              <div className="text-[10px] uppercase text-neutral-500">Líquido</div>
+              <div className="font-display num text-lg font-bold text-navy mt-1">{fmtInt(liquido)}</div>
+            </div>
+            <div className="rounded-lg p-3 text-center" style={{ background: sobra >= 0 ? C.greenL : C.redL }}>
+              <div className="text-[10px] uppercase text-neutral-500">Sobra após parcela</div>
+              <div className="font-display num text-lg font-bold mt-1" style={{ color: sobra >= 0 ? C.green : C.red }}>{fmtInt(sobra)}</div>
+            </div>
+          </div>
+
+          {sobra < 0 && (
+            <Alert type="danger" icon="ti-alert-circle">
+              Cenário insuficiente para cobrir a parcela. Faltam <strong>{fmtInt(Math.abs(sobra))}</strong>. Risco de tocar na reserva técnica — <strong>inviolável</strong>.
+            </Alert>
+          )}
+          {sobra >= 0 && sobra < 1000 && (
+            <Alert type="warn" icon="ti-alert-triangle">Cenário no fio da navalha. Margem de segurança apertada — busque +1 Combo Premium ou contrato B2B.</Alert>
+          )}
+          {sobra >= 1000 && (
+            <Alert type="ok" icon="ti-check">Cenário saudável. Reserva técnica preservada. Sobra de <strong>{fmtInt(sobra)}</strong> disponível para reinvestimento.</Alert>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
+  /* ============================================================ */
+  /*  SECTION: PARCEIROS B2B                                       */
+  /* ============================================================ */
+  function SectionParceiros() {
+    const [cat, setCat] = useState('Todos');
+    const lista = PARCEIROS_B2B.filter(p => cat === 'Todos' || p.cat === cat);
+
+    const prioColor = p => p === 'Alta' ? C.green : p === 'Permuta' ? C.gold : C.amber;
+    const prioBg = p => p === 'Alta' ? C.greenL : p === 'Permuta' ? C.goldL : C.amberL;
+
+    return (
+      <div className="space-y-4 fade-up">
+        <Alert type="premium" icon="ti-building-store">
+          Rede de prospecção qualificada para a Classe A/B do Vale do São Francisco. <strong>Barbearias = território de prospecção cativo</strong> (cliente em cadeira, 15-30min de exposição).
+        </Alert>
+
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          {CATS_PAR.map(c => <Chip key={c} active={cat === c} onClick={() => setCat(c)}>{c}</Chip>)}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {lista.map((p, i) => (
+            <Card key={i} accent={prioColor(p.prio)}>
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1 min-w-0">
+                  <div className="font-display font-bold text-navy text-sm">{p.nome}</div>
+                  <div className="text-xs text-neutral-500">{p.cidade}</div>
+                </div>
+                <Badge bg={prioBg(p.prio)} color={prioColor(p.prio)}>{p.prio}</Badge>
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-neutral-400 mb-1">Gancho</div>
+              <div className="text-xs text-navy leading-relaxed">{p.gancho}</div>
+              <div className="text-[10px] text-gold-700 mt-2 font-semibold">{p.cat}</div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  /* ============================================================ */
+  /*  SECTION: CONFIGURAÇÕES                                       */
+  /* ============================================================ */
+  function SectionConfig() {
+    const [empresa, setEmpresa] = usePersistedState('cfg.empresa', { nome: 'HIGIS Group', sub: 'Central de Gestão Concierge' });
+    const themeCtx = useTheme();
+    const fileInputRef = useRef(null);
+
+    const onLogoSelect = e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 1024 * 1024) { alert('Imagem muito grande. Use até 1MB (PNG, JPG ou SVG).'); return; }
+      const reader = new FileReader();
+      reader.onload = () => {
+        themeCtx.setLogo(reader.result);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const removeLogo = () => {
+      if (confirm('Remover a logo atual? O símbolo "H" voltará a ser exibido.')) {
+        themeCtx.setLogo(null);
+      }
+    };
+
+    const exportar = () => {
+      const data = storage.export();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `higis-backup-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    const importar = e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (confirm('Substituir TODOS os dados atuais com este backup? Esta ação é irreversível.')) {
+            storage.import(data);
+            location.reload();
+          }
+        } catch { alert('Arquivo inválido.'); }
+      };
+      reader.readAsText(file);
+    };
+
+    const resetAll = () => {
+      if (confirm('⚠ Apagar TODOS os dados do app? Isso restaura ao estado inicial. Considere exportar antes.')) {
+        if (confirm('Tem certeza absoluta? Esta ação NÃO pode ser desfeita.')) {
+          storage.clear();
+          location.reload();
+        }
+      }
+    };
+
+    return (
+      <div className="space-y-4 fade-up">
+        {/* IDENTIDADE */}
+        <Card>
+          <SectionTitle>Identidade da Empresa</SectionTitle>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-neutral-600 block mb-1">Nome</label>
+              <input type="text" value={empresa.nome} onChange={e => setEmpresa({...empresa, nome: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-neutral-600 block mb-1">Subtítulo</label>
+              <input type="text" value={empresa.sub} onChange={e => setEmpresa({...empresa, sub: e.target.value})} className="w-full text-sm px-3 py-2 rounded-lg border border-neutral-200 bg-neutral-50" />
+            </div>
+          </div>
+        </Card>
+
+        {/* LOGO */}
+        <Card>
+          <SectionTitle>Logomarca</SectionTitle>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="w-20 h-20 rounded-2xl shadow-concierge bg-white flex items-center justify-center overflow-hidden border border-neutral-100" style={{ background: themeCtx.theme.primary }}>
+              {themeCtx.logo
+                ? <img src={themeCtx.logo} alt="Logo HIGIS" className="w-full h-full object-contain bg-white" />
+                : <span className="font-display text-4xl font-bold" style={{ color: themeCtx.theme.accent }}>H</span>
+              }
+            </div>
+            <div className="flex-1 min-w-[200px]">
+              <div className="text-sm font-semibold text-navy mb-1">{themeCtx.logo ? 'Logo personalizada ativa' : 'Símbolo padrão "H"'}</div>
+              <div className="text-xs text-neutral-500 leading-relaxed mb-2">Formatos: PNG (com fundo transparente), JPG ou SVG. Limite 1MB. Aparece na sidebar, topbar e tela de carregamento.</div>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={() => fileInputRef.current?.click()} className="bg-navy text-gold-50 text-sm font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5">
+                  <i className="ti ti-upload" aria-hidden="true" />{themeCtx.logo ? 'Trocar Logo' : 'Enviar Logo'}
+                </button>
+                {themeCtx.logo && (
+                  <button onClick={removeLogo} className="bg-red-50 text-red-700 border border-red-200 text-sm font-semibold px-4 py-2 rounded-lg inline-flex items-center gap-1.5">
+                    <i className="ti ti-trash" aria-hidden="true" />Remover
+                  </button>
+                )}
+              </div>
+              <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/svg+xml" onChange={onLogoSelect} className="hidden" />
+            </div>
+          </div>
+        </Card>
+
+        {/* PALETA */}
+        <Card>
+          <SectionTitle>Paleta de Cores</SectionTitle>
+          <p className="text-xs text-neutral-500 mb-3">A paleta define a cor da sidebar, dos acentos dourados, dos botões principais e das tags. O <strong>HIGIS Clássico</strong> é a identidade oficial — as demais variantes são para campanhas sazonais ou editorial Casa Sertão.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {Object.entries(THEMES).map(([key, t]) => {
+              const active = themeCtx.themeKey === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => themeCtx.setThemeKey(key)}
+                  className={`text-left rounded-xl p-3 border-2 transition-all ${active ? 'border-gold shadow-concierge-lg' : 'border-neutral-200 hover:border-neutral-300'}`}
+                  style={{ background: '#fff' }}
+                >
+                  {/* Preview do tema */}
+                  <div className="rounded-lg overflow-hidden mb-3" style={{ background: t.primary }}>
+                    <div className="flex items-center gap-2 p-3">
+                      <div className="w-7 h-7 rounded-md flex items-center justify-center font-display font-bold text-white text-base" style={{ background: t.accent }}>H</div>
+                      <div className="text-xs font-display font-bold" style={{ color: t.textOnPrimary }}>HIGIS</div>
+                    </div>
+                    <div className="flex">
+                      <div className="flex-1 h-2" style={{ background: t.primaryDark }}></div>
+                      <div className="w-1/3 h-2" style={{ background: t.accent }}></div>
+                      <div className="w-1/4 h-2" style={{ background: t.accentLight }}></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-display font-bold text-navy text-sm">{t.name}</div>
+                      <div className="text-[11px] text-neutral-500">{t.sub}</div>
+                    </div>
+                    {active && <i className="ti ti-circle-check-filled text-gold text-xl shrink-0" aria-hidden="true" />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <Alert type="info" icon="ti-palette">
+            A troca de paleta atualiza imediatamente a sidebar, o cabeçalho e os acentos dourados em todo o app. Outras cores funcionais (verde de margem positiva, vermelho de alerta, etc.) permanecem fixas para manter clareza visual.
+          </Alert>
+        </Card>
+
+        {/* BACKUP */}
+        <Card>
+          <SectionTitle>Backup e Sincronização</SectionTitle>
+          <Alert type="info" icon="ti-cloud">
+            Os dados estão salvos <strong>localmente</strong> neste navegador/celular. Para sincronizar entre celular e PC, exporte daqui e importe no outro device — ou aguarde a v2 com Supabase (sync automático).
+          </Alert>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-3">
+            <button onClick={exportar} className="bg-navy text-gold-50 font-semibold text-sm py-2.5 rounded-lg inline-flex items-center justify-center gap-2">
+              <i className="ti ti-download" aria-hidden="true" /> Exportar Backup (.json)
+            </button>
+            <label className="bg-white border border-navy text-navy font-semibold text-sm py-2.5 rounded-lg inline-flex items-center justify-center gap-2 cursor-pointer">
+              <i className="ti ti-upload" aria-hidden="true" /> Importar Backup
+              <input type="file" accept=".json" onChange={importar} className="hidden" />
+            </label>
+            <button onClick={resetAll} className="bg-red-50 text-red-700 border border-red-200 font-semibold text-sm py-2.5 rounded-lg inline-flex items-center justify-center gap-2">
+              <i className="ti ti-trash" aria-hidden="true" /> Resetar Tudo
+            </button>
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle>Sobre</SectionTitle>
+          <div className="space-y-1 text-sm text-neutral-600">
+            <div><strong className="text-navy">HIGIS Group</strong> · CNPJ 24.135.828/0001-15</div>
+            <div>Petrolina-PE · Vale do São Francisco</div>
+            <div className="text-xs text-neutral-400 mt-2">Curadoria Técnica · Preservação de Patrimônio · Blindagem HIGIS · Gestão Concierge AA</div>
+            <div className="text-xs text-neutral-400">Versão 1.3.1 · PWA instalável · Deploy em GitHub Pages / Vercel</div>
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle>Instalação como App</SectionTitle>
+          <InstallCard />
+        </Card>
+      </div>
+    );
+  }
+
+  /* ============================================================ */
+  /*  LAYOUT: SIDEBAR (desktop) + BOTTOM NAV (mobile) + TOPBAR     */
+  /* ============================================================ */
+  function Sidebar({ current, onChange, empresa }) {
+    const ctx = useTheme();
+    const theme = ctx.theme;
+    return (
+      <aside className="hidden lg:flex flex-col w-64 xl:w-72 h-screen sticky top-0 shrink-0" style={{ background: theme.primary, color: theme.textOnPrimary }}>
+        {/* Logo */}
+        <div className="px-6 py-6 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <LogoMark size={44} rounded={12} />
+            <div className="min-w-0">
+              <div className="font-display text-lg font-bold leading-tight truncate" style={{ color: theme.textOnPrimary }}>{empresa.nome}</div>
+              <div className="text-[10px] tracking-widest uppercase text-white/40 truncate">{empresa.sub}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3">
+          {NAV.map(n => {
+            const active = current === n.id;
+            return (
+              <button
+                key={n.id}
+                onClick={() => onChange(n.id)}
+                className="nav-item w-full text-left px-3 py-2.5 rounded-lg mb-1 flex items-center gap-3 transition-colors"
+                style={active ? { background: theme.accent + '22', color: theme.accent } : { color: 'rgba(255,255,255,0.7)' }}
+              >
+                <i className={`ti ${n.icon} text-lg shrink-0`} style={active ? { color: theme.accent } : {}} aria-hidden="true" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold" style={active ? { color: theme.accent } : { color: 'rgba(255,255,255,0.9)' }}>{n.label}</div>
+                  <div className="text-[10px] text-white/40 truncate">{n.desc}</div>
+                </div>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-white/10 text-[10px] text-white/40">
+          <div className="font-display mb-0.5" style={{ color: theme.textOnPrimary }}>Petrolina, PE</div>
+          <div>HIGIS Group · v1.3.1</div>
+        </div>
+      </aside>
+    );
+  }
+
+  function BottomNav({ current, onChange }) {
+    const theme = useTheme().theme;
+    // Mobile: limita aos 5 principais; resto via "Mais"
+    const main = ['dashboard', 'tabelas', 'planos', 'simulador', 'config'];
+    const items = NAV.filter(n => main.includes(n.id));
+    return (
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 border-t border-white/10 z-40 no-print" style={{ background: theme.primary, paddingBottom: 'env(safe-area-inset-bottom, 0)' }}>
+        <div className="flex">
+          {items.map(n => (
+            <button
+              key={n.id}
+              onClick={() => onChange(n.id)}
+              className="flex-1 py-2.5 px-1 flex flex-col items-center gap-0.5 transition-colors"
+              style={{ color: current === n.id ? theme.accent : 'rgba(255,255,255,0.45)' }}
+            >
+              <i className={`ti ${n.icon} text-lg`} aria-hidden="true" />
+              <span className="text-[9px] font-semibold tracking-wide">{n.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    );
+  }
+
+  function TopBar({ current, empresa, onMenuClick }) {
+    const theme = useTheme().theme;
+    const item = NAV.find(n => n.id === current);
+    const date = useDate();
+    return (
+      <header className="lg:hidden px-4 py-3 flex items-center gap-3 sticky top-0 z-30 shadow-md" style={{ background: theme.primary, color: theme.textOnPrimary }}>
+        <button onClick={onMenuClick} style={{ color: theme.textOnPrimary }}>
+          <i className="ti ti-menu-2 text-xl" aria-hidden="true" />
+        </button>
+        <LogoMark size={32} rounded={8} />
+        <div className="flex-1 min-w-0">
+          <div className="font-display text-base font-bold truncate" style={{ color: theme.textOnPrimary }}>{item?.label || empresa.nome}</div>
+          <div className="text-[10px] text-white/40 truncate">{item?.desc}</div>
+        </div>
+        <div className="text-right text-[10px] text-white/50 shrink-0">
+          <div className="font-display" style={{ color: theme.textOnPrimary }}>Petrolina, PE</div>
+          <div className="num">{date.toLocaleDateString('pt-BR')}</div>
+        </div>
+      </header>
+    );
+  }
+
+  // Mobile drawer (para sub-menus em mobile)
+  function MobileDrawer({ open, onClose, current, onChange }) {
+    const theme = useTheme().theme;
+    if (!open) return null;
+    return (
+      <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+        <aside className="w-72 max-w-[85vw] h-full p-5 fade-up" style={{ background: theme.primary, color: theme.textOnPrimary }} onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2"><LogoMark size={32} rounded={8} /><div className="font-display text-xl font-bold" style={{ color: theme.textOnPrimary }}>Menu</div></div>
+            <button onClick={onClose} style={{ color: theme.textOnPrimary }}><i className="ti ti-x text-xl" aria-hidden="true" /></button>
+          </div>
+          {NAV.map(n => {
+            const active = current === n.id;
+            return (
+              <button
+                key={n.id}
+                onClick={() => { onChange(n.id); onClose(); }}
+                className="w-full text-left px-3 py-2.5 rounded-lg mb-1 flex items-center gap-3"
+                style={active ? { background: theme.accent + '22', color: theme.accent } : { color: 'rgba(255,255,255,0.7)' }}
+              >
+                <i className={`ti ${n.icon} text-lg`} aria-hidden="true" />
+                <span className="text-sm font-semibold">{n.label}</span>
+              </button>
+            );
+          })}
+        </aside>
+      </div>
+    );
+  }
+
+  /* ============================================================ */
+  /*  MAIN APP                                                     */
+  /* ============================================================ */
+  function App() {
+    const [current, setCurrent] = usePersistedState('nav.current', 'dashboard');
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [empresa] = usePersistedState('cfg.empresa', { nome: 'HIGIS Group', sub: 'Central de Gestão Concierge' });
+    const [themeKey, setThemeKey] = usePersistedState('cfg.theme', 'higis-classic');
+    const [logo, setLogo] = usePersistedState('cfg.logo', null);
+    const theme = THEMES[themeKey] || THEMES['higis-classic'];
+
+    // Injeta CSS vars e atualiza meta theme-color do navegador
+    useEffect(() => {
+      const r = document.documentElement.style;
+      r.setProperty('--c-primary', theme.primary);
+      r.setProperty('--c-accent', theme.accent);
+      r.setProperty('--c-accent-light', theme.accentLight);
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', theme.primary);
+    }, [theme]);
+
+    const renderSection = () => {
+      switch (current) {
+        case 'dashboard':    return <SectionDashboard />;
+        case 'tabelas':      return <SectionTabelas />;
+        case 'planos':       return <SectionPlanos />;
+        case 'simulador':    return <SectionSimulador />;
+        case 'precificacao': return <SectionPrecificacao />;
+        case 'financeiro':   return <SectionFinanceiro />;
+        case 'parceiros':    return <SectionParceiros />;
+        case 'config':       return <SectionConfig />;
+        default:             return <SectionDashboard />;
+      }
+    };
+
+    const item = NAV.find(n => n.id === current);
+
+    return (
+      <ThemeContext.Provider value={{ theme, themeKey, setThemeKey, logo, setLogo }}>
+        <div className="flex min-h-screen bg-sand-50">
+          <Sidebar current={current} onChange={setCurrent} empresa={empresa} />
+
+          <div className="flex-1 min-w-0 flex flex-col">
+            <TopBar current={current} empresa={empresa} onMenuClick={() => setDrawerOpen(true)} />
+
+            {/* Desktop section header */}
+            <div className="hidden lg:block bg-white border-b border-neutral-100 px-8 py-5">
+              <div className="max-w-7xl mx-auto">
+                <div className="font-display text-2xl font-bold text-navy">{item?.label}</div>
+                <div className="text-sm text-neutral-500">{item?.desc}</div>
+              </div>
+            </div>
+
+            <main className="flex-1 px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 pb-24 lg:pb-12">
+              <div className="max-w-7xl mx-auto w-full">
+                {renderSection()}
+              </div>
+            </main>
+
+            {/* Footer apenas desktop */}
+            <footer className="hidden lg:block px-8 py-4 text-center text-[10px] text-neutral-400 border-t border-neutral-100">
+              HIGIS Group · CNPJ 24.135.828/0001-15 · Petrolina-PE · Curadoria Técnica · Preservação de Patrimônio · <strong>v1.3.1</strong>
+            </footer>
+          </div>
+
+          <BottomNav current={current} onChange={setCurrent} />
+          <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} current={current} onChange={setCurrent} />
+        </div>
+      </ThemeContext.Provider>
+    );
+  }
+
+  /* ============================================================ */
+  /*  MOUNT                                                        */
+  /* ============================================================ */
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<App />);
+  setTimeout(() => { const s = document.getElementById('splash'); if (s) { s.classList.add('gone'); setTimeout(() => s.remove(), 500); } }, 300);
+  </script>
+
+  <!-- PWA: registro do Service Worker externo (cache-first, funciona offline) -->
+  <script>
+    if ('serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    // Captura o evento de instalação (Android/Desktop Chrome/Edge) para
+    // disponibilizar um botão "Instalar App" dentro da tela de Configurações.
+    window.__higisInstallEvent = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      window.__higisInstallEvent = e;
+      window.dispatchEvent(new CustomEvent('higis:installable'));
+    });
+  </script>
+</body>
+</html>
